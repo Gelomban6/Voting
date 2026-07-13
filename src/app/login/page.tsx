@@ -1,14 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const JUMLAH_KOLOM = 19;
+interface PilihanKolom { id: number; nama: string }
 
 export default function HalamanLogin() {
   const router = useRouter();
   const [mode, setMode] = useState<'petugas' | 'admin'>('petugas');
+  const [daftarKolom, setDaftarKolom] = useState<PilihanKolom[]>([]);
   const [kolomId, setKolomId] = useState(1);
+
+  // Daftar kolom mengikuti pengaturan admin (jumlah & nama)
+  useEffect(() => {
+    fetch('/api/quickcount', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.kolom?.length) {
+          setDaftarKolom(json.kolom.map((k: PilihanKolom) => ({ id: k.id, nama: k.nama })));
+          setKolomId(json.kolom[0].id);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [kode, setKode] = useState('');
   const [password, setPassword] = useState('');
   const [gagal, setGagal] = useState<string | null>(null);
@@ -71,9 +85,13 @@ export default function HalamanLogin() {
           <>
             <label htmlFor="kolom">Kolom / Kelompok</label>
             <select id="kolom" className="input" value={kolomId} onChange={(e) => setKolomId(Number(e.target.value))} style={{ marginBottom: 16 }}>
-              {Array.from({ length: JUMLAH_KOLOM }, (_, i) => (
-                <option value={i + 1} key={i}>Kolom {i + 1}</option>
-              ))}
+              {daftarKolom.length === 0 ? (
+                <option value={kolomId}>Memuat daftar kolom…</option>
+              ) : (
+                daftarKolom.map((k) => (
+                  <option value={k.id} key={k.id}>{k.nama}</option>
+                ))
+              )}
             </select>
             <label htmlFor="kode">Kode Akses Kolom</label>
             <input id="kode" type="password" className="input" value={kode} onChange={(e) => setKode(e.target.value)}

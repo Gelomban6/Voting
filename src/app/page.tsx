@@ -8,7 +8,7 @@ const LEBAR_NAV_BAWAAN = 216; // lebar kartu nav sebelum terukur
 const JARAK_NAV = 14;         // jarak antar kartu nav (selaras dengan CSS)
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
-interface Kandidat { id: string; nama: string; suara: number; foto: string | null }
+interface Kandidat { id: string; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
 interface Kolom { id: number; nama: string; tahap: Tahap; penatua: Kandidat[]; diaken: Kandidat[] }
 interface DataQC { kolom: Kolom[]; totalSuara: number; kolomSelesai: number; waktu: string }
 
@@ -61,7 +61,11 @@ function SisiTerpilih({ label, kandidat }: { label: string; kandidat: Kandidat[]
             <span className="cek-badge">✓</span>
           </span>
           <div className="terpilih-nama">{menang.nama}</div>
-          <div className="terpilih-suara"><Odometer nilai={menang.suara} /> suara</div>
+          {menang.aklamasi ? (
+            <div className="terpilih-suara label-aklamasi">Terpilih secara aklamasi</div>
+          ) : (
+            <div className="terpilih-suara"><Odometer nilai={menang.suara} /> suara</div>
+          )}
         </>
       ) : seri.length ? (
         <>
@@ -135,6 +139,7 @@ function CarouselTerpilih({ daftar }: { daftar: Kolom[] }) {
       <PanelTerpilih kolom={kolom} key={kolom.id} />
       {daftar.length > 1 && (
         <div className="dots dots-terpilih">
+          <button className="panah-dots" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">‹</button>
           {daftar.map((k, i) => (
             <button
               key={k.id}
@@ -144,6 +149,7 @@ function CarouselTerpilih({ daftar }: { daftar: Kolom[] }) {
               title={k.nama}
             />
           ))}
+          <button className="panah-dots" onClick={() => geser(1)} aria-label="Terpilih berikutnya">›</button>
         </div>
       )}
     </div>
@@ -194,8 +200,13 @@ function BarisHero({ k, warna, maks, unggul }: {
       <Avatar k={k} ukuran="besar" />
       <div className="hero-info">
         <div className="hero-nama-baris">
-          <span className="nama">{unggul && <span className="tanda-unggul" />}{k.nama}</span>
-          <span className="hero-angka"><Odometer nilai={k.suara} /></span>
+          <span className="nama">
+            {unggul && <span className="tanda-unggul" />}{k.nama}
+            {k.aklamasi && <span className="chip-aklamasi">aklamasi</span>}
+          </span>
+          <span className="hero-angka">
+            {k.aklamasi ? <span className="chip-aklamasi" style={{ marginLeft: 0 }}>✓</span> : <Odometer nilai={k.suara} />}
+          </span>
         </div>
         <div className={`bar-mini bar-hero ${warna}`}>
           <div style={{ width: `${(k.suara / maks) * 100}%` }} />
@@ -412,11 +423,6 @@ export default function HalamanQuickCount() {
               <button className="panah panah-kanan" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">›</button>
             </div>
 
-            {/* ===== Kartu terpilih — terpisah dari hasil voting di hero ===== */}
-            {kolomAktif.tahap === 'selesai' && (
-              <PanelTerpilih kolom={kolomAktif} key={`terpilih-${kolomAktif.id}`} />
-            )}
-
             {/* ===== Strip navigasi center-mode ===== */}
             <div className="nav-wrap" ref={relNav} onTouchStart={sentuhMulai} onTouchEnd={sentuhSelesai}>
               <div className="nav-track" style={{ transform: `translateX(${offset}px)` }}>
@@ -427,6 +433,7 @@ export default function HalamanQuickCount() {
             </div>
 
             <div className="dots">
+              <button className="panah-dots" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">‹</button>
               {data.kolom.map((k, i) => (
                 <button
                   key={k.id}
@@ -436,6 +443,7 @@ export default function HalamanQuickCount() {
                   title={k.nama}
                 />
               ))}
+              <button className="panah-dots" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">›</button>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: 14 }}>

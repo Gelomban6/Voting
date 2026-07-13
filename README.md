@@ -39,8 +39,12 @@ pertama diakses.
 3. **Sesi 1 — Penatua**: setiap kali satu suara dibacakan, tekan tombol **+1**
    calon yang bersangkutan. Angka langsung tersimpan dan tampil live di quick
    count. Tombol **−** untuk koreksi. Suara diaken masih terkunci.
-4. Setelah penghitungan penatua rampung, klik **"💾 Simpan Sesi Penatua →
-   Mulai Diaken"** — sesi penatua terkunci, sesi diaken terbuka.
+4. Setelah penghitungan penatua rampung, ada dua pilihan:
+   - **"💾 Simpan Sesi Penatua → Mulai Diaken"** — lanjut voting diaken seperti biasa; atau
+   - **"✋ Aklamasi Diaken (Peringkat 2)"** — diaken langsung ditetapkan dari
+     **peringkat 2 suara penatua** tanpa voting diaken, dan pemilihan kolom
+     selesai. Ditolak bila peringkat 2 belum jelas (seri) atau calon kurang
+     dari 2. Hasilnya diberi tanda **"aklamasi"** di quick count.
 5. **Sesi 2 — Diaken**: hitung dengan cara yang sama, lalu klik
    **"💾 Simpan & Selesaikan Pemilihan"**. Card kolom berstatus **Selesai**.
    Sesi bisa dibuka kembali bila perlu koreksi.
@@ -61,9 +65,12 @@ Semua rahasia ada di **`.env.local`** (tidak ikut ter-commit; contoh di
   bisa juga connection string MongoDB Atlas)
 - `DB_NAME` — nama database (bawaan `voting_quickcount`)
 
-Pengaturan non-rahasia (judul, jumlah kolom, interval refresh) tetap di
-[src/lib/config.ts](src/lib/config.ts). Kode akses tiap kolom diganti lewat
-**Panel Admin**, bukan file config.
+Pengaturan non-rahasia (judul, interval refresh) tetap di
+[src/lib/config.ts](src/lib/config.ts) — `jumlahKolom` di sana hanya dipakai
+sebagai seed awal saat database masih kosong. Setelah itu, **jumlah kolom,
+nama, dan kode akses** semuanya diatur lewat **Panel Admin**: menambah jumlah
+membuat kolom baru, mengurangi menghapus kolom bernomor terbesar beserta
+seluruh datanya (ada konfirmasi). Dropdown login petugas otomatis mengikuti.
 
 Setelah mengubah `.env.local`, restart server (`npm run dev` / `npm start`).
 

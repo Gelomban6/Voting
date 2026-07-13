@@ -274,6 +274,19 @@ table.tabel { width: 100%; border-collapse: collapse; }
   box-shadow: 0 0 14px rgba(56, 189, 248, .25);
 }
 
+/* ===== Carousel terpilih tersendiri (paling atas) ===== */
+.terpilih-carousel {
+  position: relative;
+  max-width: 1020px; margin: 0 auto 28px;
+}
+.terpilih-carousel .panel-terpilih { margin-bottom: 0; }
+.panah-mini {
+  width: 32px; height: 32px; font-size: .9rem; opacity: .8;
+}
+.panah-mini.panah-kiri { left: 10px; }
+.panah-mini.panah-kanan { right: 10px; }
+.dots-terpilih { margin-top: 10px; }
+
 /* ===== Kartu calon terpilih — mandiri, terpisah dari hasil voting ===== */
 .panel-terpilih {
   max-width: 1020px; margin: 0 auto 24px;
@@ -306,9 +319,11 @@ table.tabel { width: 100%; border-collapse: collapse; }
 .terpilih-seri-avatar { display: flex; }
 .terpilih-seri-avatar .avatar { margin: 0 -7px; border-color: var(--amber); }
 @media (max-width: 640px) {
-  .terpilih-isi { flex-direction: column; gap: 18px; }
-  .terpilih-pisah { width: auto; height: 1px; }
-  .terpilih-sisi { max-width: none; }
+  /* Tetap sejajar kiri-kanan di layar sempit, hanya lebih rapat */
+  .terpilih-sisi { min-width: 0; gap: 5px; }
+  .terpilih-nama { font-size: .9rem; }
+  .terpilih-suara { font-size: .74rem; }
+  .terpilih-label { font-size: .6rem; letter-spacing: 1.4px; }
 }
 
 /* Avatar dengan lencana centang — penanda terpilih yang minimalis */
@@ -328,6 +343,15 @@ table.tabel { width: 100%; border-collapse: collapse; }
 }
 .cek-kecil { color: var(--hijau); font-weight: 800; }
 .seri-teks { color: var(--amber); }
+
+/* Penanda hasil aklamasi */
+.chip-aklamasi {
+  display: inline-block; margin-left: 8px; padding: 1px 8px;
+  font-size: .6rem; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+  color: var(--hijau); border: 1px solid rgba(52, 211, 153, .45);
+  border-radius: 99px; vertical-align: 1px;
+}
+.label-aklamasi { color: var(--hijau); font-weight: 600; }
 
 /* Penanda unggul sementara pada daftar hero: titik aksen kecil */
 .tanda-unggul {
@@ -390,7 +414,19 @@ table.tabel { width: 100%; border-collapse: collapse; }
 .panah:hover { background: #32415a; }
 .panah-kiri { left: -8px; }
 .panah-kanan { right: -8px; }
-.dots { display: flex; justify-content: center; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
+.dots { display: flex; justify-content: center; align-items: center; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
+
+/* Panah kecil pengapit titik navigasi — hanya tampil di mobile,
+   menggantikan panah overlay yang menutupi teks */
+.panah-dots {
+  display: none;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--panel-2); border: 1px solid var(--border); color: var(--teks);
+  font-size: .95rem; cursor: pointer;
+  align-items: center; justify-content: center;
+  margin: 0 6px;
+}
+.panah-dots:active { background: #32415a; }
 .dot {
   width: 9px; height: 9px; border-radius: 50%; border: none; cursor: pointer;
   background: var(--border); padding: 0; transition: background .2s, transform .2s;
@@ -452,9 +488,10 @@ table.tabel { width: 100%; border-collapse: collapse; }
   .terpilih-judul { font-size: .68rem; margin-bottom: 12px; }
   .terpilih-isi { gap: 14px; }
 
-  .panah { width: 34px; height: 34px; font-size: .95rem; }
-  .panah-kiri { left: 0; }
-  .panah-kanan { right: 0; }
+  /* Panah overlay menutupi teks di layar sempit — sembunyikan,
+     navigasi lewat swipe, strip kartu, titik, dan panah pengapit titik */
+  .panah { display: none; }
+  .panah-dots { display: inline-flex; }
 
   .kartu-nav { flex: 0 0 172px; width: 172px; padding: 10px 12px; }
   .kartu-nav h4 { font-size: .82rem; }

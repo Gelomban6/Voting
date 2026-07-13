@@ -33,6 +33,47 @@ export async function GET() {
   });
 }
 
+// PUT: atur jumlah kolom { jumlah }
+// - Menambah: kolom baru dibuat dengan nama & kode bawaan
+// - Mengurangi: kolom bernomor lebih besar DIHAPUS beserta kandidat & suaranya
+export async function PUT(req: Request) {
+  if (!(await adminOnly())) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  const jumlah = Math.floor(Number(body?.jumlah));
+  if (!Number.isFinite(jumlah) || jumlah < 1 || jumlah > 99) {
+    return NextResponse.json({ error: 'Jumlah kolom harus antara 1 dan 99' }, { status: 400 });
+  }
+
+  const kolom = await koleksiKolom();
+  const kandidat = await koleksiKandidat();
+
+  // Tambah kolom yang belum ada (upsert agar aman dijalankan berulang)
+  await kolom.bulkWrite(
+    Array.from({ length: jumlah }, (_, i) => ({
+      updateOne: {
+        filter: { _id: i + 1 },
+        update: {
+          $setOnInsert: {
+            nama: `Kolom ${i + 1}`,
+            kode: `kolom${i + 1}`,
+            tahap: 'penatua' as Tahap,
+          },
+        },
+        upsert: true,
+      },
+    }))
+  );
+
+  // Hapus kolom di atas jumlah baru beserta seluruh datanya
+  const sisa = await kolom.deleteMany({ _id: { $gt: jumlah } });
+  if (sisa.deletedCount > 0) {
+    await kandidat.deleteMany({ kolomId: { $gt: jumlah } });
+  }
+
+  return NextResponse.json({ ok: true, jumlah });
+}
+
 // PATCH: ubah kolom { id, nama?, kode?, tahap? }
 export async function PATCH(req: Request) {
   if (!(await adminOnly())) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });

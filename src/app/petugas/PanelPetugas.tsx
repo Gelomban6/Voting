@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 type Jabatan = 'penatua' | 'diaken';
-interface Kandidat { id: string; jabatan: Jabatan; nama: string; suara: number; foto: string | null }
+interface Kandidat { id: string; jabatan: Jabatan; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
 interface DataPetugas {
   kolom: { id: number; nama: string; tahap: Tahap };
   penatua: Kandidat[];
@@ -146,6 +146,27 @@ export default function PanelPetugas() {
     if (await panggil('/api/petugas/tahap', { tahap })) muat();
   }
 
+  // Aklamasi: diaken ditetapkan dari peringkat 2 suara penatua
+  async function aklamasi() {
+    if (!data) return;
+    const urut = [...data.penatua].sort((a, b) => b.suara - a.suara);
+    const kedua = urut[1];
+    if (!kedua) {
+      tampilkan('gagal', 'Aklamasi butuh minimal 2 calon penatua.');
+      return;
+    }
+    const adaDiaken = data.diaken.length > 0;
+    if (!confirm(
+      `Tetapkan "${kedua.nama}" (peringkat 2 penatua, ${kedua.suara} suara) sebagai DIAKEN secara aklamasi?\n\n` +
+      (adaDiaken ? 'Calon diaken yang sudah ada akan DIHAPUS. ' : '') +
+      'Sesi voting diaken dilewati dan pemilihan kolom ini langsung selesai.'
+    )) return;
+    if (await panggil('/api/petugas/aklamasi', {})) {
+      tampilkan('sukses', `"${kedua.nama}" ditetapkan sebagai diaken secara aklamasi.`);
+      muat();
+    }
+  }
+
   async function keluar() {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/login');
@@ -190,7 +211,10 @@ export default function PanelPetugas() {
               <span className="avatar besar avatar-klik" title="Klik untuk pasang foto"
                 onClick={() => pilihFoto(k)}>{inisial(k.nama)}</span>
             )}
-            <span className="nama-tally">{k.nama}</span>
+            <span className="nama-tally">
+              {k.nama}
+              {k.aklamasi && <span style={{ marginLeft: 8, fontSize: '.68rem', fontWeight: 700, color: 'var(--hijau)', textTransform: 'uppercase', letterSpacing: '.8px' }}>aklamasi</span>}
+            </span>
             <button className="btn-tally btn-tally-min" onClick={() => tally(k, -1)}
               disabled={!aktif || k.suara === 0} title="Koreksi (kurangi satu)">−</button>
             <span className="hitung">{k.suara}</span>
@@ -252,9 +276,15 @@ export default function PanelPetugas() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {tahap === 'penatua' && (
-                <button className="btn" onClick={() => ubahTahap('diaken')} disabled={sibuk}>
-                  💾 Simpan Sesi Penatua → Mulai Diaken
-                </button>
+                <>
+                  <button className="btn" onClick={() => ubahTahap('diaken')} disabled={sibuk}>
+                    💾 Simpan Sesi Penatua → Mulai Diaken
+                  </button>
+                  <button className="btn btn-sekunder" onClick={aklamasi} disabled={sibuk}
+                    title="Diaken ditetapkan dari peringkat 2 suara penatua, tanpa voting diaken">
+                    ✋ Aklamasi Diaken (Peringkat 2)
+                  </button>
+                </>
               )}
               {tahap === 'diaken' && (
                 <>
