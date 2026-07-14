@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -65,7 +65,7 @@ export default function FormLogin() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <form className="panel" style={{ width: '100%', maxWidth: 400, padding: 32 }} onSubmit={masuk}>
-        <h1 style={{ fontSize: '1.2rem', textAlign: 'center' }}>ðŸ—³ï¸ Login Petugas</h1>
+        <h1 style={{ fontSize: '1.2rem', textAlign: 'center' }}>🗳️ Login Petugas</h1>
         <p style={{ textAlign: 'center', color: 'var(--redup)', fontSize: '.85rem', margin: '6px 0 22px' }}>
           Pemilihan Penatua &amp; Diaken
         </p>
@@ -86,7 +86,7 @@ export default function FormLogin() {
             <label htmlFor="kolom">Kolom / Kelompok</label>
             <select id="kolom" className="input" value={kolomId} onChange={(e) => setKolomId(Number(e.target.value))} style={{ marginBottom: 16 }}>
               {daftarKolom.length === 0 ? (
-                <option value={kolomId}>Memuat daftar kolomâ€¦</option>
+                <option value={kolomId}>Memuat daftar kolom…</option>
               ) : (
                 daftarKolom.map((k) => (
                   <option value={k.id} key={k.id}>{k.nama}</option>
@@ -106,7 +106,7 @@ export default function FormLogin() {
         )}
 
         <button className="btn" style={{ width: '100%' }} disabled={proses}>
-          {proses ? 'Memprosesâ€¦' : 'Masuk'}
+          {proses ? 'Memproses…' : 'Masuk'}
         </button>
 
         <p style={{ textAlign: 'center', marginTop: 18, fontSize: '.82rem' }}>
