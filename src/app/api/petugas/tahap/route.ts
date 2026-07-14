@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { koleksiKolom, Tahap } from '@/lib/db';
+import { koleksiKolom, Tahap, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 // Transisi tahap yang diizinkan (maju dan mundur satu langkah)
@@ -22,9 +22,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Tahap tidak valid' }, { status: 400 });
   }
 
+  const sekarang = await petugasResmi(session.kolomId, session.token);
+  if (!sekarang) {
+    return NextResponse.json(
+      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { status: 401 }
+    );
+  }
   const kolom = await koleksiKolom();
-  const sekarang = await kolom.findOne({ _id: session.kolomId });
-  if (!sekarang) return NextResponse.json({ error: 'Kolom tidak ditemukan' }, { status: 404 });
 
   if (!TRANSISI[sekarang.tahap].includes(tujuan)) {
     return NextResponse.json(

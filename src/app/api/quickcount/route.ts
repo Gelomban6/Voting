@@ -20,10 +20,14 @@ export async function GET() {
     let totalSuara = 0;
     for (const c of kandidatRows) totalSuara += c.suara;
 
+    // Petugas dianggap aktif bila heartbeat terakhirnya belum lewat 90 detik
+    const batasAktif = Date.now() - 90_000;
+
     const data = kolomRows.map((k) => ({
       id: k._id,
       nama: k.nama,
       tahap: k.tahap,
+      petugasAktif: !!k.petugasAktifPada && k.petugasAktifPada.getTime() > batasAktif,
       penatua: perKolom.get(k._id)!.penatua.map(kandidatKeJson),
       diaken: perKolom.get(k._id)!.diaken.map(kandidatKeJson),
     }));

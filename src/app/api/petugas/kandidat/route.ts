@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { koleksiKandidat, ObjectId } from '@/lib/db';
+import { koleksiKandidat, ObjectId, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 async function petugasSession() {
   const session = await getSession();
   if (!session || session.role !== 'petugas') return null;
+  if (!(await petugasResmi(session.kolomId, session.token))) return null;
   return session;
 }
 

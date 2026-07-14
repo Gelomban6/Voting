@@ -25,9 +25,16 @@ export async function POST(req: Request) {
   if (body.mode === 'petugas') {
     const kolomId = Number(body.kolomId);
     const kode = String(body.kode ?? '');
-    const kolom = await (await koleksiKolom()).findOne({ _id: kolomId });
+    const koleksi = await koleksiKolom();
+    const kolom = await koleksi.findOne({ _id: kolomId });
     if (kolom && samaAman(kode, kolom.kode)) {
-      await setSessionCookie({ role: 'petugas', kolomId });
+      // Satu sesi aktif per kolom: token baru menggantikan sesi perangkat lama
+      const token = crypto.randomBytes(16).toString('hex');
+      await koleksi.updateOne(
+        { _id: kolomId },
+        { $set: { sesiToken: token, petugasAktifPada: new Date() } }
+      );
+      await setSessionCookie({ role: 'petugas', kolomId, token });
       return NextResponse.json({ ok: true, role: 'petugas', kolomId });
     }
     return NextResponse.json({ error: 'Kode kolom salah' }, { status: 401 });

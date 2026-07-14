@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { koleksiKolom, koleksiKandidat, ObjectId } from '@/lib/db';
+import { koleksiKolom, koleksiKandidat, ObjectId, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 // POST: aklamasi — diaken ditetapkan dari peringkat 2 suara penatua,
@@ -13,8 +13,13 @@ export async function POST() {
   const kolom = await koleksiKolom();
   const kandidat = await koleksiKandidat();
 
-  const k = await kolom.findOne({ _id: session.kolomId });
-  if (!k) return NextResponse.json({ error: 'Kolom tidak ditemukan' }, { status: 404 });
+  const k = await petugasResmi(session.kolomId, session.token);
+  if (!k) {
+    return NextResponse.json(
+      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { status: 401 }
+    );
+  }
   if (k.tahap !== 'penatua') {
     return NextResponse.json(
       { error: 'Aklamasi hanya bisa dilakukan saat sesi penatua (sebelum voting diaken dimulai).' },

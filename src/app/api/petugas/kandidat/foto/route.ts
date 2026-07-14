@@ -1,14 +1,21 @@
 import { NextResponse } from 'next/server';
-import { koleksiKandidat, ObjectId, Binary } from '@/lib/db';
+import { koleksiKandidat, ObjectId, Binary, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
+
+async function sesiPetugasValid() {
+  const session = await getSession();
+  if (!session || session.role !== 'petugas') return null;
+  if (!(await petugasResmi(session.kolomId, session.token))) return null;
+  return session;
+}
 
 const TIPE_DIIZINKAN = ['image/jpeg', 'image/png', 'image/webp'];
 const MAKS_UKURAN = 2 * 1024 * 1024; // 2 MB
 
 // POST (multipart): unggah/ganti foto kandidat — field "id" dan "foto"
 export async function POST(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== 'petugas') {
+  const session = await sesiPetugasValid();
+  if (!session) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });
   }
 
@@ -48,8 +55,8 @@ export async function POST(req: Request) {
 
 // DELETE: hapus foto kandidat { id }
 export async function DELETE(req: Request) {
-  const session = await getSession();
-  if (!session || session.role !== 'petugas') {
+  const session = await sesiPetugasValid();
+  if (!session) {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });
   }
 

@@ -4,7 +4,7 @@ import { config } from './config';
 
 export type Session =
   | { role: 'admin' }
-  | { role: 'petugas'; kolomId: number };
+  | { role: 'petugas'; kolomId: number; token?: string };
 
 const COOKIE = 'voting_session';
 

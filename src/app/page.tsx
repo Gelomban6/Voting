@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const REFRESH_MS = 4000;
-const GESER_OTOMATIS_MS = 7000;
+const GESER_OTOMATIS_MS = 4000; // kecepatan putar carousel hasil voting
 const LEBAR_NAV_BAWAAN = 216; // lebar kartu nav sebelum terukur
 const JARAK_NAV = 14;         // jarak antar kartu nav (selaras dengan CSS)
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kandidat { id: string; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
-interface Kolom { id: number; nama: string; tahap: Tahap; penatua: Kandidat[]; diaken: Kandidat[] }
+interface Kolom { id: number; nama: string; tahap: Tahap; petugasAktif: boolean; penatua: Kandidat[]; diaken: Kandidat[] }
 interface DataQC { kolom: Kolom[]; totalSuara: number; kolomSelesai: number; waktu: string }
 
 const TAHAP_LABEL: Record<Tahap, string> = {
@@ -267,7 +267,8 @@ function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; o
       <div className="kartu-judul">
         <h4>{kolom.nama}</h4>
         <span className={`badge badge-${kolom.tahap}`} style={{ padding: '2px 8px', fontSize: '.58rem' }}>
-          <span className="titik" />{TAHAP_LABEL[kolom.tahap]}
+          {(selesai || kolom.petugasAktif) && <span className="titik" />}
+          {TAHAP_LABEL[kolom.tahap]}
         </span>
       </div>
       {barisRingkas('P', 'penatua', kolom.penatua)}
@@ -407,7 +408,8 @@ export default function HalamanQuickCount() {
                   <div>
                     <h2 className="hero-judul">{kolomAktif.nama}</h2>
                     <span className={`badge badge-${kolomAktif.tahap}`}>
-                      <span className="titik" />{TAHAP_LABEL[kolomAktif.tahap]}
+                      {(kolomAktif.tahap === 'selesai' || kolomAktif.petugasAktif) && <span className="titik" />}
+                      {TAHAP_LABEL[kolomAktif.tahap]}
                     </span>
                     <span className="hero-total"><Odometer nilai={totalKolom(kolomAktif)} /> suara masuk</span>
                   </div>
@@ -416,8 +418,11 @@ export default function HalamanQuickCount() {
                   </div>
                 </div>
                 <div className="hero-grid">
-                  <SeksiHero judul="Penatua" warna="penatua" kandidat={kolomAktif.penatua} aktif={kolomAktif.tahap === 'penatua'} />
-                  <SeksiHero judul="Diaken" warna="diaken" kandidat={kolomAktif.diaken} aktif={kolomAktif.tahap === 'diaken'} />
+                  {/* "berlangsung" hanya menyala bila petugas kolom sedang login/aktif */}
+                  <SeksiHero judul="Penatua" warna="penatua" kandidat={kolomAktif.penatua}
+                    aktif={kolomAktif.tahap === 'penatua' && kolomAktif.petugasAktif} />
+                  <SeksiHero judul="Diaken" warna="diaken" kandidat={kolomAktif.diaken}
+                    aktif={kolomAktif.tahap === 'diaken' && kolomAktif.petugasAktif} />
                 </div>
               </div>
               <button className="panah panah-kanan" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">›</button>

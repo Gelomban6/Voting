@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { koleksiKolom, koleksiKandidat, ObjectId } from '@/lib/db';
+import { koleksiKandidat, ObjectId, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 // POST: tambah/kurangi satu suara { kandidatId, delta: 1 | -1 }
@@ -23,8 +23,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Permintaan tidak valid' }, { status: 400 });
   }
 
-  const kolom = await (await koleksiKolom()).findOne({ _id: session.kolomId });
-  if (!kolom) return NextResponse.json({ error: 'Kolom tidak ditemukan' }, { status: 404 });
+  const kolom = await petugasResmi(session.kolomId, session.token);
+  if (!kolom) {
+    return NextResponse.json(
+      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { status: 401 }
+    );
+  }
   if (kolom.tahap === 'selesai') {
     return NextResponse.json(
       { error: 'Suara terkunci — sesi jabatan ini tidak sedang berlangsung.' },

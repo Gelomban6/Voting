@@ -9,6 +9,11 @@ export interface KolomDoc {
   nama: string;
   kode: string;
   tahap: Tahap;
+  // Token sesi petugas yang sedang aktif — satu sesi per kolom;
+  // login dari perangkat lain menggantikan token sehingga sesi lama putus.
+  sesiToken?: string | null;
+  // Kapan terakhir petugas kolom ini memanggil API (heartbeat)
+  petugasAktifPada?: Date | null;
 }
 
 export interface KandidatDoc {
@@ -81,6 +86,22 @@ export async function koleksiKolom(): Promise<Collection<KolomDoc>> {
 
 export async function koleksiKandidat(): Promise<Collection<KandidatDoc>> {
   return (await db()).collection<KandidatDoc>('kandidat');
+}
+
+// Validasi sesi petugas (token harus cocok dengan sesi aktif kolom) sekaligus
+// mencatat heartbeat aktivitas. Mengembalikan dokumen kolom, atau null bila
+// sesi sudah digantikan login dari perangkat lain.
+export async function petugasResmi(
+  kolomId: number,
+  token: string | undefined
+): Promise<KolomDoc | null> {
+  if (!token) return null;
+  const kolom = await koleksiKolom();
+  return kolom.findOneAndUpdate(
+    { _id: kolomId, sesiToken: token },
+    { $set: { petugasAktifPada: new Date() } },
+    { returnDocument: 'after' }
+  );
 }
 
 // Bentuk kandidat untuk respons JSON (tanpa data biner foto)

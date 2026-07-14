@@ -32,7 +32,13 @@ export default function PanelPetugas() {
     if (!json.error) setData(json);
   }, [router]);
 
-  useEffect(() => { muat(); }, [muat]);
+  // Muat awal + polling 30 detik: heartbeat "petugas aktif", sinkron data
+  // antar perangkat, dan mendeteksi bila kolom ini login di perangkat lain
+  useEffect(() => {
+    muat();
+    const timer = setInterval(muat, 30_000);
+    return () => clearInterval(timer);
+  }, [muat]);
 
   function tampilkan(jenis: 'sukses' | 'gagal', teks: string) {
     setPesan({ jenis, teks });

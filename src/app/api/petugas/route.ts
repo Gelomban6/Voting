@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { koleksiKolom, koleksiKandidat, kandidatKeJson } from '@/lib/db';
+import { koleksiKandidat, kandidatKeJson, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +11,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });
   }
 
-  const kolom = await (await koleksiKolom()).findOne({ _id: session.kolomId });
+  const kolom = await petugasResmi(session.kolomId, session.token);
   if (!kolom) {
-    return NextResponse.json({ error: 'Kolom tidak ditemukan' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { status: 401 }
+    );
   }
 
   const kandidat = await (await koleksiKandidat())
