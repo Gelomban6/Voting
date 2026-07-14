@@ -152,6 +152,22 @@ export default function PanelPetugas() {
     if (await panggil('/api/petugas/tahap', { tahap })) muat();
   }
 
+  // Selesaikan pemilihan — hanya bila sudah ada diaken yang dipilih
+  function selesaikanPemilihan() {
+    if (!data) return;
+    if (data.diaken.length === 0) {
+      tampilkan('gagal',
+        'Belum ada calon diaken. Tambahkan calon dan hitung suaranya, ' +
+        'atau kembali ke sesi penatua untuk memakai aklamasi.');
+      return;
+    }
+    if (!data.diaken.some((k) => k.suara > 0)) {
+      tampilkan('gagal', 'Belum ada suara untuk calon diaken. Hitung suaranya dulu sebelum menyelesaikan pemilihan.');
+      return;
+    }
+    ubahTahap('selesai');
+  }
+
   // Aklamasi: diaken ditetapkan dari peringkat 2 suara penatua
   async function aklamasi() {
     if (!data) return;
@@ -297,7 +313,7 @@ export default function PanelPetugas() {
                   <button className="btn btn-sekunder" onClick={() => ubahTahap('penatua')} disabled={sibuk}>
                     ← Buka Lagi Sesi Penatua
                   </button>
-                  <button className="btn btn-hijau" onClick={() => ubahTahap('selesai')} disabled={sibuk}>
+                  <button className="btn btn-hijau" onClick={selesaikanPemilihan} disabled={sibuk}>
                     💾 Simpan &amp; Selesaikan Pemilihan
                   </button>
                 </>
