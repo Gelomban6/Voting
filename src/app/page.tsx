@@ -288,6 +288,7 @@ export default function HalamanQuickCount() {
   const [lebarKartu, setLebarKartu] = useState(LEBAR_NAV_BAWAAN);
   const relNav = useRef<HTMLDivElement>(null);
   const sentuhX = useRef<number | null>(null);
+  const sentuhNav = useRef<{ x: number; t: number } | null>(null);
 
   useEffect(() => {
     let hidup = true;
@@ -365,6 +366,29 @@ export default function HalamanQuickCount() {
     if (Math.abs(dx) > 48) geserManual(dx < 0 ? 1 : -1);
   }
 
+  // Usapan pada strip kartu kecil: mendukung flick — usapan cepat/panjang
+  // melompati beberapa kartu sekaligus sesuai jarak dan kecepatannya
+  function navMulai(e: React.TouchEvent) {
+    sentuhNav.current = { x: e.touches[0].clientX, t: Date.now() };
+  }
+  function navSelesai(e: React.TouchEvent) {
+    if (!sentuhNav.current || !jumlah) return;
+    const dx = e.changedTouches[0].clientX - sentuhNav.current.x;
+    const dt = Math.max(1, Date.now() - sentuhNav.current.t);
+    sentuhNav.current = null;
+    if (Math.abs(dx) < 40) return;
+
+    const kecepatan = Math.abs(dx) / dt; // px per milidetik
+    let lompat = Math.max(1, Math.round(Math.abs(dx) / langkah));
+    if (kecepatan > 0.9) lompat += 2;
+    else if (kecepatan > 0.5) lompat += 1;
+    lompat = Math.min(lompat, 6);
+
+    const arah = dx < 0 ? 1 : -1;
+    setAktif((a) => (((a + arah * lompat) % jumlah) + jumlah) % jumlah);
+    setKunci(true);
+  }
+
   return (
     <>
       <header className="header-publik">
@@ -429,7 +453,7 @@ export default function HalamanQuickCount() {
             </div>
 
             {/* ===== Strip navigasi center-mode ===== */}
-            <div className="nav-wrap" ref={relNav} onTouchStart={sentuhMulai} onTouchEnd={sentuhSelesai}>
+            <div className="nav-wrap" ref={relNav} onTouchStart={navMulai} onTouchEnd={navSelesai}>
               <div className="nav-track" style={{ transform: `translateX(${offset}px)` }}>
                 {data.kolom.map((k, i) => (
                   <KartuNav kolom={k} tengah={i === aktif} onClick={() => pilih(i)} key={k.id} />
