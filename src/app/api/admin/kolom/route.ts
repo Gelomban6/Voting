@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { koleksiKolom, koleksiKandidat, Tahap } from '@/lib/db';
+import { koleksiKolom, koleksiKandidat, Tahap, statusDatabase } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -22,6 +22,7 @@ export async function GET() {
   const perKolom = new Map(ringkasan.map((r) => [r._id, r]));
 
   return NextResponse.json({
+    dbStatus: statusDatabase(),
     kolom: kolomRows.map((k) => ({
       id: k._id,
       nama: k.nama,

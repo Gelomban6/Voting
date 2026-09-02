@@ -1,0 +1,6 @@
+{
+  "name": "Voting Quick Count",
+  "description": "Hasil sementara pemilihan penatua dan diaken per kolom",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

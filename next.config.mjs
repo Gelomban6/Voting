@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['mysql2'],
+  output: 'standalone',
+  serverExternalPackages: ['mongodb'],
 };
 
 export default nextConfig;

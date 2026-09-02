@@ -5,8 +5,32 @@ import { useRouter } from 'next/navigation';
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kolom {
-  id: number; nama: string; kode: string; tahap: Tahap;
-  jumlahKandidat: number; totalSuara: number;
+  id: number;
+  nama: string;
+  kode: string;
+  tahap: Tahap;
+  jumlahKandidat: number;
+  totalSuara: number;
+}
+
+interface RekapDetail {
+  waktuCetak: string;
+  totalSuaraGereja: number;
+  kolomSelesai: number;
+  totalKolom: number;
+  data: Array<{
+    id: number;
+    nama: string;
+    kode: string;
+    tahap: Tahap;
+    totalSuara: number;
+    penatuaTerpilih: string;
+    penatuaSuara: number;
+    diakenTerpilih: string;
+    diakenSuara: number;
+    penatua: Array<{ nama: string; suara: number; aklamasi: boolean }>;
+    diaken: Array<{ nama: string; suara: number; aklamasi: boolean }>;
+  }>;
 }
 
 const TAHAP_LABEL: Record<Tahap, string> = {
@@ -18,10 +42,24 @@ const TAHAP_LABEL: Record<Tahap, string> = {
 export default function PanelAdmin() {
   const router = useRouter();
   const [kolom, setKolom] = useState<Kolom[]>([]);
+  const [dbStatus, setDbStatus] = useState<{ mode: 'mongodb' | 'memory'; info: string }>({
+    mode: 'memory',
+    info: 'Memuat...',
+  });
   const [pesan, setPesan] = useState<{ jenis: 'sukses' | 'gagal'; teks: string } | null>(null);
   const [draft, setDraft] = useState<Record<number, { nama: string; kode: string }>>({});
   const [jumlahDraft, setJumlahDraft] = useState('');
   const [sibuk, setSibuk] = useState(false);
+  const [rekapData, setRekapData] = useState<RekapDetail | null>(null);
+  const [tampilCetak, setTampilCetak] = useState(false);
+
+  const [modalKonfirmasi, setModalKonfirmasi] = useState<{
+    judul: string;
+    pesan: string;
+    aksiLabel: string;
+    bahaya?: boolean;
+    onKonfirmasi: () => Promise<void> | void;
+  } | null>(null);
 
   const muat = useCallback(async () => {
     const res = await fetch('/api/admin/kolom', { cache: 'no-store' });
@@ -29,6 +67,7 @@ export default function PanelAdmin() {
     const json = await res.json();
     if (!json.error) {
       setKolom(json.kolom);
+      if (json.dbStatus) setDbStatus(json.dbStatus);
       const d: Record<number, { nama: string; kode: string }> = {};
       for (const k of json.kolom as Kolom[]) d[k.id] = { nama: k.nama, kode: k.kode };
       setDraft(d);
@@ -90,22 +129,127 @@ export default function PanelAdmin() {
       const teks = adaData
         ? `Mengurangi ke ${jumlah} akan MENGHAPUS ${dihapus.length} kolom terakhir BESERTA calon dan suaranya. Lanjutkan?`
         : `Mengurangi ke ${jumlah} akan menghapus ${dihapus.length} kolom terakhir (belum berisi data). Lanjutkan?`;
-      if (!confirm(teks)) return;
+      
+      setModalKonfirmasi({
+        judul: 'Kurangi Jumlah Kolom',
+        pesan: teks,
+        aksiLabel: 'Terapkan Pengurangan',
+        bahaya: true,
+        onKonfirmasi: async () => {
+          if (await panggil('/api/admin/kolom', { jumlah }, 'PUT')) {
+            tampilkan('sukses', `Jumlah kolom sekarang ${jumlah}.`);
+            muat();
+          }
+        },
+      });
+      return;
     }
+
     if (await panggil('/api/admin/kolom', { jumlah }, 'PUT')) {
       tampilkan('sukses', `Jumlah kolom sekarang ${jumlah}.`);
       muat();
     }
   }
 
-  async function reset(jenis: 'suara' | 'semua') {
-    const teks = jenis === 'suara'
-      ? 'Nolkan SEMUA suara dan kembalikan semua kolom ke tahap Penatua? Daftar calon tetap tersimpan.'
-      : 'HAPUS SEMUA calon beserta suaranya dan mulai dari awal? Tindakan ini tidak bisa dibatalkan.';
-    if (!confirm(teks)) return;
-    if (await panggil('/api/admin/reset', { jenis })) {
-      tampilkan('sukses', 'Reset berhasil.');
-      muat();
+  function reset(jenis: 'suara' | 'semua') {
+    const isSuara = jenis === 'suara';
+    setModalKonfirmasi({
+      judul: isSuara ? 'Nolkan Semua Suara' : 'Hapus Semua Calon & Suara',
+      pesan: isSuara
+        ? 'Nolkan SEMUA perolehan suara dan kembalikan seluruh kolom ke tahap Penatua? Daftar calon tetap tersimpan.'
+        : 'HAPUS SEMUA calon beserta suaranya dan mulai dari awal? Tindakan ini PERMANEN dan tidak dapat dibatalkan.',
+      aksiLabel: isSuara ? 'Nolkan Suara' : 'Hapus Bersih Semua Data',
+      bahaya: true,
+      onKonfirmasi: async () => {
+        if (await panggil('/api/admin/reset', { jenis })) {
+          tampilkan('sukses', 'Reset berhasil.');
+          muat();
+        }
+      },
+    });
+  }
+
+  // ==== Salin Daftar Akun Petugas ke Clipboard ====
+  function salinSemuaAkun() {
+    if (!kolom.length) return;
+    const teks = kolom
+      .map((k) => `${k.nama} -> Kode Akses: ${k.kode}`)
+      .join('\n');
+    navigator.clipboard.writeText(teks);
+    tampilkan('sukses', 'Daftar kode akses semua kolom berhasil disalin ke clipboard!');
+  }
+
+  // ==== Muat Rekap Detail & Buka Modal Cetak ====
+  async function bukaCetakBeritaAcara() {
+    setSibuk(true);
+    try {
+      const res = await fetch('/api/admin/rekap');
+      const json = await res.json();
+      if (!res.ok) {
+        tampilkan('gagal', json.error ?? 'Gagal memuat rekapitulasi');
+        return;
+      }
+      setRekapData(json);
+      setTampilCetak(true);
+    } catch {
+      tampilkan('gagal', 'Tidak dapat terhubung ke server');
+    } finally {
+      setSibuk(false);
+    }
+  }
+
+  // ==== Download File CSV / Excel ====
+  async function unduhCSV() {
+    setSibuk(true);
+    try {
+      const res = await fetch('/api/admin/rekap');
+      const json: RekapDetail = await res.json();
+      if (!res.ok) {
+        tampilkan('gagal', 'Gagal memuat data untuk diekspor');
+        return;
+      }
+
+      let csv = '\uFEFF'; // UTF-8 BOM agar terbaca rapi di Microsoft Excel
+      csv += 'No,Nama Kolom,Tahap,Total Suara Kolom,Penatua Terpilih,Suara Penatua,Diaken Terpilih,Suara Diaken\r\n';
+      json.data.forEach((k, idx) => {
+        const row = [
+          idx + 1,
+          `"${k.nama.replace(/"/g, '""')}"`,
+          `"${TAHAP_LABEL[k.tahap]}"`,
+          k.totalSuara,
+          `"${k.penatuaTerpilih.replace(/"/g, '""')}"`,
+          k.penatuaSuara,
+          `"${k.diakenTerpilih.replace(/"/g, '""')}"`,
+          k.diakenSuara,
+        ];
+        csv += row.join(',') + '\r\n';
+      });
+
+      csv += '\r\n\r\nDetail Rincian Seluruh Calon Per Kolom:\r\n';
+      csv += 'Nama Kolom,Jabatan,Nama Calon,Perolehan Suara,Aklamasi\r\n';
+      json.data.forEach((k) => {
+        k.penatua.forEach((c) => {
+          csv += `"${k.nama.replace(/"/g, '""')}",Penatua,"${c.nama.replace(/"/g, '""')}",${c.suara},${c.aklamasi ? 'Ya' : 'Tidak'}\r\n`;
+        });
+        k.diaken.forEach((c) => {
+          csv += `"${k.nama.replace(/"/g, '""')}",Diaken,"${c.nama.replace(/"/g, '""')}",${c.suara},${c.aklamasi ? 'Ya' : 'Tidak'}\r\n`;
+        });
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rekapitulasi_Pemilihan_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      tampilkan('sukses', 'File CSV Rekapitulasi berhasil diunduh.');
+    } catch {
+      tampilkan('gagal', 'Gagal membuat file CSV');
+    } finally {
+      setSibuk(false);
     }
   }
 
@@ -118,6 +262,14 @@ export default function PanelAdmin() {
     <>
       <nav className="nav-panel">
         <span className="merek">⚙️ Panel Admin</span>
+        <span
+          className={`badge-db ${
+            dbStatus.mode === 'mongodb' ? 'badge-db-mongo' : 'badge-db-memory'
+          }`}
+          title={dbStatus.info}
+        >
+          ● {dbStatus.info}
+        </span>
         <a href="/" target="_blank">Lihat Quick Count ↗</a>
         <span className="spasi" />
         <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }}>Keluar</a>
@@ -125,6 +277,29 @@ export default function PanelAdmin() {
 
       <div className="wadah-sempit">
         {pesan && <div className={`pesan pesan-${pesan.jenis}`}>{pesan.teks}</div>}
+
+        {/* Panel Laporan & Ekspor */}
+        <div className="panel" style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h2 style={{ fontSize: '1.05rem', marginBottom: 4 }}>📊 Laporan &amp; Berita Acara Rekapitulasi</h2>
+              <p style={{ fontSize: '.82rem', color: 'var(--redup)' }}>
+                Cetak Berita Acara resmi panitia atau unduh data perolehan suara dalam format Excel/CSV.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-sekunder btn-kecil" onClick={salinSemuaAkun} disabled={sibuk}>
+                📋 Salin Akun Kolom
+              </button>
+              <button className="btn btn-sekunder btn-kecil" onClick={unduhCSV} disabled={sibuk}>
+                📥 Unduh CSV/Excel
+              </button>
+              <button className="btn btn-hijau btn-kecil" onClick={bukaCetakBeritaAcara} disabled={sibuk}>
+                🖨️ Cetak Berita Acara
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div className="panel" style={{ marginBottom: 20 }}>
           <h2 style={{ fontSize: '1.05rem', marginBottom: 6 }}>Jumlah Kolom</h2>
@@ -147,18 +322,22 @@ export default function PanelAdmin() {
         </div>
 
         <div className="panel" style={{ marginBottom: 20, overflowX: 'auto' }}>
-          <h2 style={{ fontSize: '1.05rem', marginBottom: 6 }}>Kolom &amp; Kode Akses Petugas</h2>
-          <p style={{ fontSize: '.82rem', color: 'var(--redup)', marginBottom: 14 }}>
-            Bagikan kode akses ke petugas masing-masing kolom. Kode bawaan: <code>kolom1</code> … <code>kolom19</code> — sebaiknya diganti.
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div>
+              <h2 style={{ fontSize: '1.05rem', marginBottom: 4 }}>Kolom &amp; Kode Akses Petugas</h2>
+              <p style={{ fontSize: '.82rem', color: 'var(--redup)' }}>
+                Bagikan kode akses ke petugas masing-masing kolom. Anda dapat mengubah nama kolom dan kode akses kapan saja.
+              </p>
+            </div>
+          </div>
           <table className="tabel">
             <thead>
               <tr>
                 <th>Nama Kolom</th>
                 <th>Kode Akses</th>
                 <th>Tahap</th>
-                <th>Calon</th>
-                <th>Suara</th>
+                <th style={{ textAlign: 'center' }}>Calon</th>
+                <th style={{ textAlign: 'center' }}>Suara</th>
                 <th></th>
               </tr>
             </thead>
@@ -185,7 +364,7 @@ export default function PanelAdmin() {
                   </td>
                   <td style={{ textAlign: 'center' }}>{k.jumlahKandidat}</td>
                   <td style={{ textAlign: 'center', fontWeight: 700 }}>{Number(k.totalSuara).toLocaleString('id-ID')}</td>
-                  <td>
+                  <td style={{ textAlign: 'right' }}>
                     <button className="btn btn-kecil" onClick={() => simpanKolom(k.id)} disabled={sibuk}>Simpan</button>
                   </td>
                 </tr>
@@ -209,6 +388,108 @@ export default function PanelAdmin() {
           </div>
         </div>
       </div>
+
+      {/* Modal Dialog Konfirmasi */}
+      {modalKonfirmasi && (
+        <div className="modal-overlay" onClick={() => setModalKonfirmasi(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-judul">{modalKonfirmasi.judul}</div>
+            <div className="modal-pesan">{modalKonfirmasi.pesan}</div>
+            <div className="modal-aksi">
+              <button
+                type="button"
+                className="btn btn-sekunder"
+                onClick={() => setModalKonfirmasi(null)}
+                disabled={sibuk}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className={`btn ${modalKonfirmasi.bahaya ? 'btn-merah' : 'btn-hijau'}`}
+                onClick={async () => {
+                  const aksi = modalKonfirmasi.onKonfirmasi;
+                  setModalKonfirmasi(null);
+                  await aksi();
+                }}
+                disabled={sibuk}
+              >
+                {modalKonfirmasi.aksiLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Tampilan Cetak Berita Acara */}
+      {tampilCetak && rekapData && (
+        <div className="modal-overlay" onClick={() => setTampilCetak(false)}>
+          <div
+            className="modal-box wadah-cetak"
+            style={{ maxWidth: 840, maxHeight: '90vh', overflowY: 'auto', background: '#fff', color: '#111' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="kop-surat">
+              <h1>BERITA ACARA REKAPITULASI HASIL PEMILIHAN</h1>
+              <h1>PENATUA &amp; DIAKEN PERIODE PELAYANAN</h1>
+              <p>Waktu Cetak: {rekapData.waktuCetak} · Total Suara Masuk: {rekapData.totalSuaraGereja.toLocaleString('id-ID')} suara</p>
+            </div>
+
+            <table className="tabel-cetak">
+              <thead>
+                <tr>
+                  <th style={{ width: 40 }}>No</th>
+                  <th>Kolom</th>
+                  <th>Status</th>
+                  <th>Penatua Terpilih</th>
+                  <th style={{ width: 65 }}>Suara</th>
+                  <th>Diaken Terpilih</th>
+                  <th style={{ width: 65 }}>Suara</th>
+                  <th style={{ width: 75 }}>Total Suara</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rekapData.data.map((k, i) => (
+                  <tr key={k.id}>
+                    <td style={{ textAlign: 'center' }}>{i + 1}</td>
+                    <td style={{ fontWeight: 600 }}>{k.nama}</td>
+                    <td style={{ textAlign: 'center' }}>{k.tahap === 'selesai' ? 'Selesai' : 'Berlangsung'}</td>
+                    <td>{k.penatuaTerpilih}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{k.penatuaSuara || '-'}</td>
+                    <td>{k.diakenTerpilih}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{k.diakenSuara || '-'}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 700 }}>{k.totalSuara}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="tanda-tangan">
+              <div className="ttd-box">
+                <p>Ketua Panitia</p>
+                <div className="ttd-garis">( ....................................... )</div>
+              </div>
+              <div className="ttd-box">
+                <p>Sekretaris Panitia</p>
+                <div className="ttd-garis">( ....................................... )</div>
+              </div>
+              <div className="ttd-box">
+                <p>Saksi / Perwakilan</p>
+                <div className="ttd-garis">( ....................................... )</div>
+              </div>
+            </div>
+
+            <div className="modal-aksi" style={{ marginTop: 24, borderTop: '1px solid #ddd', paddingTop: 16 }}>
+              <button type="button" className="btn btn-sekunder" onClick={() => setTampilCetak(false)}>
+                Tutup
+              </button>
+              <button type="button" className="btn btn-hijau" onClick={() => window.print()}>
+                🖨️ Cetak Dokumen Ini
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

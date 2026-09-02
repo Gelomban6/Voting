@@ -22,6 +22,13 @@ export default function PanelPetugas() {
   const [pesan, setPesan] = useState<{ jenis: 'sukses' | 'gagal'; teks: string } | null>(null);
   const [namaBaru, setNamaBaru] = useState<Record<Jabatan, string>>({ penatua: '', diaken: '' });
   const [sibuk, setSibuk] = useState(false);
+  const [modalKonfirmasi, setModalKonfirmasi] = useState<{
+    judul: string;
+    pesan: string;
+    aksiLabel: string;
+    bahaya?: boolean;
+    onKonfirmasi: () => Promise<void> | void;
+  } | null>(null);
   const relFile = useRef<HTMLInputElement>(null);
   const targetFoto = useRef<string | null>(null);
 
@@ -112,12 +119,64 @@ export default function PanelPetugas() {
     }
   }
 
+  // Kompresi gambar di client sebelum dikirim ke server (hemat memori & bandwidth)
+  async function kompresGambar(file: File): Promise<Blob> {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 480;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) resolve(blob);
+                else resolve(file);
+              },
+              'image/jpeg',
+              0.82
+            );
+          } else {
+            resolve(file);
+          }
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function hapusKandidat(k: Kandidat) {
-    if (!confirm(`Hapus calon "${k.nama}"?`)) return;
-    if (await panggil('/api/petugas/kandidat', { id: k.id }, 'DELETE')) {
-      tampilkan('sukses', 'Calon dihapus.');
-      muat();
-    }
+    setModalKonfirmasi({
+      judul: 'Hapus Calon',
+      pesan: `Apakah Anda yakin ingin menghapus calon "${k.nama}"? Seluruh perolehan suara calon ini akan terhapus.`,
+      aksiLabel: 'Hapus Calon',
+      bahaya: true,
+      onKonfirmasi: async () => {
+        if (await panggil('/api/petugas/kandidat', { id: k.id }, 'DELETE')) {
+          tampilkan('sukses', 'Calon berhasil dihapus.');
+          muat();
+        }
+      },
+    });
   }
 
   // ==== Foto ====
@@ -132,15 +191,18 @@ export default function PanelPetugas() {
     const id = targetFoto.current;
     if (!file || !id) return;
 
-    const form = new FormData();
-    form.append('id', String(id));
-    form.append('foto', file);
     setSibuk(true);
     try {
+      tampilkan('sukses', 'Memproses & mengoptimalkan foto…');
+      const blobTerkonversi = await kompresGambar(file);
+      const form = new FormData();
+      form.append('id', String(id));
+      form.append('foto', blobTerkonversi, 'foto.jpg');
+
       const res = await fetch('/api/petugas/kandidat/foto', { method: 'POST', body: form });
       const json = await res.json();
       if (!res.ok) tampilkan('gagal', json.error ?? 'Gagal mengunggah foto');
-      else { tampilkan('sukses', 'Foto tersimpan.'); muat(); }
+      else { tampilkan('sukses', 'Foto berhasil disimpan.'); muat(); }
     } catch {
       tampilkan('gagal', 'Tidak dapat terhubung ke server');
     } finally {
@@ -165,7 +227,15 @@ export default function PanelPetugas() {
       tampilkan('gagal', 'Belum ada suara untuk calon diaken. Hitung suaranya dulu sebelum menyelesaikan pemilihan.');
       return;
     }
-    ubahTahap('selesai');
+    setModalKonfirmasi({
+      judul: 'Selesaikan Pemilihan',
+      pesan: 'Seluruh penghitungan suara untuk Penatua dan Diaken di kolom ini akan dikunci dan dinyatakan selesai. Lanjutkan?',
+      aksiLabel: 'Selesaikan & Kunci',
+      bahaya: false,
+      onKonfirmasi: async () => {
+        await ubahTahap('selesai');
+      },
+    });
   }
 
   // Aklamasi: diaken ditetapkan dari peringkat 2 suara penatua
@@ -178,15 +248,20 @@ export default function PanelPetugas() {
       return;
     }
     const adaDiaken = data.diaken.length > 0;
-    if (!confirm(
-      `Tetapkan "${kedua.nama}" (peringkat 2 penatua, ${kedua.suara} suara) sebagai DIAKEN secara aklamasi?\n\n` +
-      (adaDiaken ? 'Calon diaken yang sudah ada akan DIHAPUS. ' : '') +
-      'Sesi voting diaken dilewati dan pemilihan kolom ini langsung selesai.'
-    )) return;
-    if (await panggil('/api/petugas/aklamasi', {})) {
-      tampilkan('sukses', `"${kedua.nama}" ditetapkan sebagai diaken secara aklamasi.`);
-      muat();
-    }
+    setModalKonfirmasi({
+      judul: 'Aklamasi Diaken',
+      pesan: `Tetapkan "${kedua.nama}" (peringkat 2 penatua, ${kedua.suara} suara) sebagai DIAKEN secara aklamasi?\n\n` +
+        (adaDiaken ? '⚠️ PERHATIAN: Calon diaken yang sudah ada sebelumnya akan DIHAPUS. ' : '') +
+        'Sesi voting diaken dilewati dan pemilihan kolom ini langsung selesai.',
+      aksiLabel: 'Tetapkan Aklamasi',
+      bahaya: adaDiaken,
+      onKonfirmasi: async () => {
+        if (await panggil('/api/petugas/aklamasi', {})) {
+          tampilkan('sukses', `"${kedua.nama}" ditetapkan sebagai diaken secara aklamasi.`);
+          muat();
+        }
+      },
+    });
   }
 
   async function keluar() {
@@ -337,6 +412,37 @@ export default function PanelPetugas() {
           {seksiTally('diaken', 'Diaken')}
         </div>
       </div>
+
+      {modalKonfirmasi && (
+        <div className="modal-overlay" onClick={() => setModalKonfirmasi(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-judul">{modalKonfirmasi.judul}</div>
+            <div className="modal-pesan">{modalKonfirmasi.pesan}</div>
+            <div className="modal-aksi">
+              <button
+                type="button"
+                className="btn btn-sekunder"
+                onClick={() => setModalKonfirmasi(null)}
+                disabled={sibuk}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className={`btn ${modalKonfirmasi.bahaya ? 'btn-merah' : 'btn-hijau'}`}
+                onClick={async () => {
+                  const aksi = modalKonfirmasi.onKonfirmasi;
+                  setModalKonfirmasi(null);
+                  await aksi();
+                }}
+                disabled={sibuk}
+              >
+                {modalKonfirmasi.aksiLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

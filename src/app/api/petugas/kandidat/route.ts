@@ -29,7 +29,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Nama dan jabatan wajib diisi' }, { status: 400 });
   }
 
-  const res = await (await koleksiKandidat()).insertOne({
+  const koleksi = await koleksiKandidat();
+  const calonAda = await koleksi.find({ kolomId: session.kolomId, jabatan }).toArray();
+  const sudahAda = calonAda.some((c) => c.nama.trim().toLowerCase() === nama.toLowerCase());
+  if (sudahAda) {
+    return NextResponse.json({ error: `Calon "${nama}" sudah terdaftar pada sesi ${jabatan}` }, { status: 409 });
+  }
+
+  const res = await koleksi.insertOne({
     _id: new ObjectId(),
     kolomId: session.kolomId,
     jabatan,
