@@ -233,6 +233,45 @@ table.tabel { width: 100%; border-collapse: collapse; }
 .hero-angka { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .bar-hero { height: 11px; flex-basis: auto; }
 
+/* ===== Indikator Trend Suara & Keunggulan ===== */
+.trend-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  font-size: .68rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: .2px;
+  user-select: none;
+  transition: all .25s ease;
+}
+.trend-indicator.trend-naik {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.12);
+}
+.trend-indicator.trend-turun {
+  background: rgba(244, 63, 94, 0.16);
+  color: #fb7185;
+  border: 1px solid rgba(251, 113, 133, 0.35);
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.12);
+}
+.trend-indicator.trend-tetap {
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--samar);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+.trend-indicator:hover {
+  filter: brightness(1.2);
+  transform: translateY(-1px);
+}
+.trend-ikon { flex-shrink: 0; }
+.trend-val { font-size: .66rem; }
+
 /* ===== Odometer: digit menggulung saat nilai berubah ===== */
 .odo {
   display: inline-flex; overflow: hidden; height: 1em;

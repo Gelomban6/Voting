@@ -12,6 +12,9 @@ import {
   Vote,
   CheckCircle2,
   ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from 'lucide-react';
 
 const REFRESH_MS = 4000;
@@ -23,6 +26,13 @@ type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kandidat { id: string; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
 interface Kolom { id: number; nama: string; tahap: Tahap; petugasAktif: boolean; penatua: Kandidat[]; diaken: Kandidat[] }
 interface DataQC { kolom: Kolom[]; totalSuara: number; kolomSelesai: number; waktu: string }
+
+export interface TrendKandidat {
+  arah: 'naik' | 'turun' | 'tetap';
+  perubahanSuara: number;
+  perubahanLead: number;
+  keterangan: string;
+}
 
 const TAHAP_LABEL: Record<Tahap, string> = {
   penatua: 'Voting Penatua',
@@ -204,9 +214,83 @@ function Odometer({ nilai }: { nilai: number }) {
   );
 }
 
+// ===== Perhitungan perubahan suara & selisih keunggulan (lead) sejak pembaruan terakhir =====
+function hitungTrendSemuaKolom(
+  kolomBaru: Kolom[],
+  riwayatRef: React.MutableRefObject<Map<string, { suara: number; lead: number }>>
+): Map<string, TrendKandidat> {
+  const hasilTrend = new Map<string, TrendKandidat>();
+
+  for (const k of kolomBaru) {
+    for (const daftar of [k.penatua, k.diaken]) {
+      if (!daftar.length) continue;
+      // Urutkan untuk mencari suara tertinggi (pemuncak) dan peringkat 2
+      const urut = [...daftar].sort((a, b) => b.suara - a.suara);
+      const maks = urut[0]?.suara ?? 0;
+      const peringkatDua = urut[1]?.suara ?? 0;
+      const adaSuara = maks > 0;
+
+      for (const kandidat of daftar) {
+        // Keunggulan: jika peringkat 1, margin keunggulan thd peringkat 2 (+).
+        // Jika trailing, selisih thd pemuncak (-)
+        const isLeader = kandidat.suara === maks && adaSuara;
+        const currentLead = isLeader ? (kandidat.suara - peringkatDua) : (kandidat.suara - maks);
+
+        const prev = riwayatRef.current.get(kandidat.id);
+        if (!prev) {
+          // Pertama kali dimuat
+          riwayatRef.current.set(kandidat.id, { suara: kandidat.suara, lead: currentLead });
+          hasilTrend.set(kandidat.id, {
+            arah: 'tetap',
+            perubahanSuara: 0,
+            perubahanLead: 0,
+            keterangan: 'Belum ada perubahan sejak awal pemantauan',
+          });
+          continue;
+        }
+
+        const deltaSuara = kandidat.suara - prev.suara;
+        const deltaLead = currentLead - prev.lead;
+
+        let arah: 'naik' | 'turun' | 'tetap' = 'tetap';
+        let keterangan = 'Tidak ada perubahan';
+
+        if (deltaLead > 0) {
+          arah = 'naik';
+          keterangan = isLeader
+            ? `Keunggulan bertambah +${deltaLead} suara sejak pembaruan terakhir`
+            : `Mengejar ketertinggalan +${deltaLead} suara ke pemuncak`;
+        } else if (deltaLead < 0) {
+          arah = 'turun';
+          keterangan = isLeader
+            ? `Keunggulan menyusut -${Math.abs(deltaLead)} suara sejak pembaruan terakhir`
+            : `Jarak ketertinggalan melebar -${Math.abs(deltaLead)} suara`;
+        } else if (deltaSuara > 0) {
+          arah = 'naik';
+          keterangan = `Suara bertambah +${deltaSuara} suara`;
+        } else {
+          arah = 'tetap';
+          keterangan = 'Stabil (tidak ada perubahan selisih suara)';
+        }
+
+        // Simpan riwayat terbaru
+        riwayatRef.current.set(kandidat.id, { suara: kandidat.suara, lead: currentLead });
+        hasilTrend.set(kandidat.id, {
+          arah,
+          perubahanSuara: deltaSuara,
+          perubahanLead: deltaLead,
+          keterangan,
+        });
+      }
+    }
+  }
+
+  return hasilTrend;
+}
+
 // ===== Baris kandidat di hero, berkilau saat suaranya bertambah =====
-function BarisHero({ k, warna, maks, unggul }: {
-  k: Kandidat; warna: 'penatua' | 'diaken'; maks: number; unggul: boolean;
+function BarisHero({ k, warna, maks, unggul, trend }: {
+  k: Kandidat; warna: 'penatua' | 'diaken'; maks: number; unggul: boolean; trend?: TrendKandidat;
 }) {
   const [naik, setNaik] = useState(false);
   const sebelumnya = useRef(k.suara);
@@ -220,6 +304,8 @@ function BarisHero({ k, warna, maks, unggul }: {
     }
     sebelumnya.current = k.suara;
   }, [k.suara]);
+
+  const nilaiDelta = trend ? Math.abs(trend.perubahanLead || trend.perubahanSuara) : 0;
 
   return (
     <div className={`baris-hero ${naik ? 'naik' : ''} ${unggul ? `unggul ${warna}` : ''}`}>
@@ -235,15 +321,33 @@ function BarisHero({ k, warna, maks, unggul }: {
               </span>
             )}
           </span>
-          <span className="hero-angka">
-            {k.aklamasi ? (
-              <span className="chip-aklamasi" style={{ marginLeft: 0, display: 'inline-flex', alignItems: 'center' }}>
-                <Check size={12} />
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            {trend && !k.aklamasi && (
+              <span
+                className={`trend-indicator trend-${trend.arah}`}
+                title={trend.keterangan}
+                aria-label={trend.keterangan}
+              >
+                {trend.arah === 'naik' && <TrendingUp size={11} strokeWidth={2.5} className="trend-ikon" />}
+                {trend.arah === 'turun' && <TrendingDown size={11} strokeWidth={2.5} className="trend-ikon" />}
+                {trend.arah === 'tetap' && <Minus size={10} className="trend-ikon" />}
+                <span className="trend-val">
+                  {trend.arah === 'naik' && `+${nilaiDelta > 0 ? nilaiDelta : 1}`}
+                  {trend.arah === 'turun' && `-${nilaiDelta > 0 ? nilaiDelta : 1}`}
+                  {trend.arah === 'tetap' && '0'}
+                </span>
               </span>
-            ) : (
-              <Odometer nilai={k.suara} />
             )}
-          </span>
+            <span className="hero-angka">
+              {k.aklamasi ? (
+                <span className="chip-aklamasi" style={{ marginLeft: 0, display: 'inline-flex', alignItems: 'center' }}>
+                  <Check size={12} />
+                </span>
+              ) : (
+                <Odometer nilai={k.suara} />
+              )}
+            </span>
+          </div>
         </div>
         <div className={`bar-mini bar-hero ${warna}`}>
           <div style={{ width: `${(k.suara / maks) * 100}%` }} />
@@ -254,8 +358,8 @@ function BarisHero({ k, warna, maks, unggul }: {
 }
 
 // ===== Seksi jabatan di dalam hero =====
-function SeksiHero({ judul, warna, kandidat, aktif }: {
-  judul: string; warna: 'penatua' | 'diaken'; kandidat: Kandidat[]; aktif: boolean;
+function SeksiHero({ judul, warna, kandidat, aktif, mapTrend }: {
+  judul: string; warna: 'penatua' | 'diaken'; kandidat: Kandidat[]; aktif: boolean; mapTrend?: Map<string, TrendKandidat>;
 }) {
   const maks = Math.max(...kandidat.map((k) => k.suara), 1);
   const adaSuara = kandidat.some((k) => k.suara > 0);
@@ -273,7 +377,14 @@ function SeksiHero({ judul, warna, kandidat, aktif }: {
         <div className="teks-kosong">Belum ada calon</div>
       ) : (
         kandidat.map((k, i) => (
-          <BarisHero k={k} warna={warna} maks={maks} unggul={i === 0 && adaSuara} key={k.id} />
+          <BarisHero
+            k={k}
+            warna={warna}
+            maks={maks}
+            unggul={i === 0 && adaSuara}
+            trend={mapTrend?.get(k.id)}
+            key={k.id}
+          />
         ))
       )}
     </div>
@@ -323,6 +434,7 @@ function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; o
 
 export default function HalamanQuickCount() {
   const [data, setData] = useState<DataQC | null>(null);
+  const [mapTrend, setMapTrend] = useState<Map<string, TrendKandidat>>(new Map());
   const [gagal, setGagal] = useState(false);
   const [aktif, setAktif] = useState(0);
   const [jeda, setJeda] = useState(false);
@@ -332,6 +444,7 @@ export default function HalamanQuickCount() {
   const relNav = useRef<HTMLDivElement>(null);
   const sentuhX = useRef<number | null>(null);
   const sentuhNav = useRef<{ x: number; t: number } | null>(null);
+  const riwayatRef = useRef<Map<string, { suara: number; lead: number }>>(new Map());
 
   useEffect(() => {
     let hidup = true;
@@ -340,6 +453,8 @@ export default function HalamanQuickCount() {
         const res = await fetch('/api/quickcount', { cache: 'no-store' });
         const json = await res.json();
         if (hidup && !json.error) {
+          const trendBaru = hitungTrendSemuaKolom(json.kolom, riwayatRef);
+          setMapTrend(trendBaru);
           setData(json);
           setGagal(false);
         }
@@ -495,9 +610,11 @@ export default function HalamanQuickCount() {
                 <div className="hero-grid">
                   {/* "berlangsung" hanya menyala bila petugas kolom sedang login/aktif */}
                   <SeksiHero judul="Penatua" warna="penatua" kandidat={kolomAktif.penatua}
-                    aktif={kolomAktif.tahap === 'penatua' && kolomAktif.petugasAktif} />
+                    aktif={kolomAktif.tahap === 'penatua' && kolomAktif.petugasAktif}
+                    mapTrend={mapTrend} />
                   <SeksiHero judul="Diaken" warna="diaken" kandidat={kolomAktif.diaken}
-                    aktif={kolomAktif.tahap === 'diaken' && kolomAktif.petugasAktif} />
+                    aktif={kolomAktif.tahap === 'diaken' && kolomAktif.petugasAktif}
+                    mapTrend={mapTrend} />
                 </div>
               </div>
               <button className="panah panah-kanan" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">
