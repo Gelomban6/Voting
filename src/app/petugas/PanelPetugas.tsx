@@ -2,6 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Vote,
+  ExternalLink,
+  LogOut,
+  Check,
+  CheckCheck,
+  Award,
+  ArrowRight,
+  ArrowLeft,
+  RotateCcw,
+  Save,
+  Plus,
+  Minus,
+  Trash2,
+  Camera,
+  AlertTriangle,
+  HelpCircle,
+} from 'lucide-react';
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 type Jabatan = 'penatua' | 'diaken';
@@ -119,84 +137,81 @@ export default function PanelPetugas() {
     }
   }
 
-  // Kompresi gambar di client sebelum dikirim ke server (hemat memori & bandwidth)
-  async function kompresGambar(file: File): Promise<Blob> {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const maxDim = 480;
-          let w = img.width;
-          let h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) {
-              h = Math.round((h * maxDim) / w);
-              w = maxDim;
-            } else {
-              w = Math.round((w * maxDim) / h);
-              h = maxDim;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, w, h);
-            canvas.toBlob(
-              (blob) => {
-                if (blob) resolve(blob);
-                else resolve(file);
-              },
-              'image/jpeg',
-              0.82
-            );
-          } else {
-            resolve(file);
-          }
-        };
-        img.onerror = () => resolve(file);
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => resolve(file);
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function hapusKandidat(k: Kandidat) {
+  function hapusKandidat(k: Kandidat) {
     setModalKonfirmasi({
       judul: 'Hapus Calon',
-      pesan: `Apakah Anda yakin ingin menghapus calon "${k.nama}"? Seluruh perolehan suara calon ini akan terhapus.`,
+      pesan: `Hapus calon "${k.nama}" beserta perolehan suaranya (${k.suara} suara)?`,
       aksiLabel: 'Hapus Calon',
       bahaya: true,
       onKonfirmasi: async () => {
         if (await panggil('/api/petugas/kandidat', { id: k.id }, 'DELETE')) {
-          tampilkan('sukses', 'Calon berhasil dihapus.');
+          tampilkan('sukses', `Calon "${k.nama}" dihapus.`);
           muat();
         }
       },
     });
   }
 
-  // ==== Foto ====
   function pilihFoto(k: Kandidat) {
     targetFoto.current = k.id;
     relFile.current?.click();
   }
 
+  // Kompresi dan resize gambar di sisi klien sebelum dikirim ke server
+  async function kompresGambar(file: File, lebarMaks = 480, kualitas = 0.85): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > lebarMaks || height > lebarMaks) {
+            if (width > height) {
+              height = Math.round((height * lebarMaks) / width);
+              width = lebarMaks;
+            } else {
+              width = Math.round((width * lebarMaks) / height);
+              height = lebarMaks;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(file);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) resolve(blob);
+              else resolve(file);
+            },
+            'image/jpeg',
+            kualitas
+          );
+        };
+        img.onerror = () => reject(new Error('Gagal membaca format gambar'));
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => reject(new Error('Gagal memuat file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
   async function unggahFoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    const kid = targetFoto.current;
+    if (!file || !kid) return;
     e.target.value = '';
-    const id = targetFoto.current;
-    if (!file || !id) return;
 
     setSibuk(true);
     try {
-      tampilkan('sukses', 'Memproses & mengoptimalkan foto…');
-      const blobTerkonversi = await kompresGambar(file);
+      const blobTerkonversi = await kompresGambar(file, 480, 0.85);
+
       const form = new FormData();
-      form.append('id', String(id));
+      form.append('id', kid);
       form.append('foto', blobTerkonversi, 'foto.jpg');
 
       const res = await fetch('/api/petugas/kandidat/foto', { method: 'POST', body: form });
@@ -289,36 +304,55 @@ export default function PanelPetugas() {
           <h2 style={{ fontSize: '1.05rem', color: warna }}>
             {judul} <span style={{ color: 'var(--samar)', fontWeight: 400, fontSize: '.85rem' }}>· {totalSeksi} suara</span>
           </h2>
-          {aktif
-            ? <span className={`badge badge-${jabatan}`}><span className="titik" />Sedang Berlangsung</span>
-            : <span style={{ fontSize: '.75rem', color: 'var(--samar)' }}>
-                {posisi > urutan.indexOf(jabatan) ? '✓ tersimpan' : 'menunggu giliran'}
-              </span>}
+          {aktif ? (
+            <span className={`badge badge-${jabatan}`}><span className="titik" />Sedang Berlangsung</span>
+          ) : (
+            <span style={{ fontSize: '.75rem', color: 'var(--samar)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              {posisi > urutan.indexOf(jabatan) ? (
+                <>
+                  <Check size={12} className="text-emerald-400" />
+                  <span>tersimpan</span>
+                </>
+              ) : (
+                'menunggu giliran'
+              )}
+            </span>
+          )}
         </div>
 
         {daftar.length === 0 && <p className="teks-kosong" style={{ marginBottom: 12 }}>Belum ada calon.</p>}
 
         {daftar.map((k) => (
           <div key={k.id} className="baris-tally">
-            {k.foto ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="avatar besar avatar-klik" src={k.foto} alt={k.nama}
-                title="Klik untuk ganti foto" onClick={() => pilihFoto(k)} />
-            ) : (
-              <span className="avatar besar avatar-klik" title="Klik untuk pasang foto"
-                onClick={() => pilihFoto(k)}>{inisial(k.nama)}</span>
-            )}
-            <span className="nama-tally">
-              {k.nama}
-              {k.aklamasi && <span style={{ marginLeft: 8, fontSize: '.68rem', fontWeight: 700, color: 'var(--hijau)', textTransform: 'uppercase', letterSpacing: '.8px' }}>aklamasi</span>}
+            <div className="relative group cursor-pointer" onClick={() => pilihFoto(k)} title="Klik untuk pasang/ganti foto">
+              {k.foto ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="avatar besar avatar-klik" src={k.foto} alt={k.nama} />
+              ) : (
+                <span className="avatar besar avatar-klik">{inisial(k.nama)}</span>
+              )}
+            </div>
+            <span className="nama-tally" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>{k.nama}</span>
+              {k.aklamasi && (
+                <span style={{ fontSize: '.68rem', fontWeight: 700, color: 'var(--hijau)', textTransform: 'uppercase', letterSpacing: '.8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <Award size={11} /> aklamasi
+                </span>
+              )}
             </span>
             <button className="btn-tally btn-tally-min" onClick={() => tally(k, -1)}
-              disabled={!aktif || k.suara === 0} title="Koreksi (kurangi satu)">−</button>
+              disabled={!aktif || k.suara === 0} title="Koreksi (kurangi satu)">
+              <Minus size={14} />
+            </button>
             <span className="hitung">{k.suara}</span>
             <button className="btn-tally" onClick={() => tally(k, 1)}
-              disabled={!aktif} title="Tambah satu suara">+1</button>
+              disabled={!aktif} title="Tambah satu suara">
+              <Plus size={13} style={{ display: 'inline', marginRight: 1 }} />1
+            </button>
             <button className="btn btn-merah btn-kecil" onClick={() => hapusKandidat(k)}
-              disabled={sibuk} title="Hapus calon">✕</button>
+              disabled={sibuk} title="Hapus calon" style={{ padding: '6px 9px' }}>
+              <Trash2 size={13} />
+            </button>
           </div>
         ))}
 
@@ -329,7 +363,10 @@ export default function PanelPetugas() {
             onChange={(e) => setNamaBaru((p) => ({ ...p, [jabatan]: e.target.value }))}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); tambahKandidat(jabatan); } }}
           />
-          <button className="btn btn-sekunder" onClick={() => tambahKandidat(jabatan)} disabled={sibuk}>+ Calon</button>
+          <button className="btn btn-sekunder" onClick={() => tambahKandidat(jabatan)} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Plus size={14} />
+            <span>Calon</span>
+          </button>
         </div>
 
         {!aktif && (
@@ -349,10 +386,19 @@ export default function PanelPetugas() {
         style={{ display: 'none' }} onChange={unggahFoto} />
 
       <nav className="nav-panel">
-        <span className="merek">🗳️ {data.kolom.nama} — Panel Petugas</span>
-        <a href="/" target="_blank">Lihat Quick Count ↗</a>
+        <span className="merek" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <Vote size={18} className="text-sky-400" />
+          <span>{data.kolom.nama} &mdash; Panel Petugas</span>
+        </span>
+        <a href="/" target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span>Lihat Quick Count</span>
+          <ExternalLink size={13} />
+        </a>
         <span className="spasi" />
-        <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }}>Keluar</a>
+        <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <LogOut size={13} />
+          <span>Keluar</span>
+        </a>
       </nav>
 
       <div className="wadah-sempit">
@@ -365,7 +411,9 @@ export default function PanelPetugas() {
                 <span key={t} style={{ display: 'flex', alignItems: 'center' }}>
                   {i > 0 && <span className="garis-step" />}
                   <span className={`step ${t === tahap ? 'aktif' : posisi > i ? 'lewat' : ''}`}>
-                    <span className="bulat">{posisi > i ? '✓' : i + 1}</span>
+                    <span className="bulat" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {posisi > i ? <Check size={12} strokeWidth={3} /> : i + 1}
+                    </span>
                     <span className="ket-step">{t === 'selesai' ? 'Selesai' : `Voting ${t[0].toUpperCase()}${t.slice(1)}`}</span>
                   </span>
                 </span>
@@ -374,36 +422,50 @@ export default function PanelPetugas() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {tahap === 'penatua' && (
                 <>
-                  <button className="btn" onClick={() => ubahTahap('diaken')} disabled={sibuk}>
-                    💾 Simpan Sesi Penatua → Mulai Diaken
+                  <button className="btn" onClick={() => ubahTahap('diaken')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Save size={14} />
+                    <span>Simpan Sesi Penatua</span>
+                    <ArrowRight size={14} />
                   </button>
                   <button className="btn btn-sekunder" onClick={aklamasi} disabled={sibuk}
-                    title="Diaken ditetapkan dari peringkat 2 suara penatua, tanpa voting diaken">
-                    ✋ Aklamasi Diaken (Peringkat 2)
+                    title="Diaken ditetapkan dari peringkat 2 suara penatua, tanpa voting diaken"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Award size={14} className="text-amber-400" />
+                    <span>Aklamasi Diaken (Peringkat 2)</span>
                   </button>
                 </>
               )}
               {tahap === 'diaken' && (
                 <>
-                  <button className="btn btn-sekunder" onClick={() => ubahTahap('penatua')} disabled={sibuk}>
-                    ← Buka Lagi Sesi Penatua
+                  <button className="btn btn-sekunder" onClick={() => ubahTahap('penatua')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <ArrowLeft size={14} />
+                    <span>Buka Sesi Penatua</span>
                   </button>
-                  <button className="btn btn-hijau" onClick={selesaikanPemilihan} disabled={sibuk}>
-                    💾 Simpan &amp; Selesaikan Pemilihan
+                  <button className="btn btn-hijau" onClick={selesaikanPemilihan} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <CheckCheck size={14} />
+                    <span>Simpan &amp; Selesaikan Pemilihan</span>
                   </button>
                 </>
               )}
               {tahap === 'selesai' && (
-                <button className="btn btn-sekunder" onClick={() => ubahTahap('diaken')} disabled={sibuk}>
-                  Buka Kembali (koreksi)
+                <button className="btn btn-sekunder" onClick={() => ubahTahap('diaken')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <RotateCcw size={14} />
+                  <span>Buka Kembali (Koreksi)</span>
                 </button>
               )}
             </div>
           </div>
-          <p style={{ marginTop: 12, fontSize: '.8rem', color: 'var(--redup)' }}>
-            {tahap === 'selesai'
-              ? '✓ Pemilihan kolom ini telah selesai dan seluruh suara tersimpan. Terima kasih!'
-              : 'Tekan +1 setiap kali satu suara dibacakan. Angka langsung tersimpan dan tampil di quick count. Setelah penghitungan sesi ini rampung, tekan tombol Simpan untuk mengunci dan lanjut.'}
+          <p style={{ marginTop: 12, fontSize: '.8rem', color: 'var(--redup)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {tahap === 'selesai' ? (
+              <>
+                <Check size={14} className="text-emerald-400" />
+                <span>Pemilihan kolom ini telah selesai dan seluruh suara tersimpan. Terima kasih!</span>
+              </>
+            ) : (
+              <span>
+                Tekan <strong>+1</strong> setiap kali satu suara dibacakan. Angka langsung tersimpan dan tampil di quick count. Setelah penghitungan sesi rampung, tekan tombol Simpan untuk mengunci dan lanjut.
+              </span>
+            )}
           </p>
         </div>
 
@@ -416,7 +478,10 @@ export default function PanelPetugas() {
       {modalKonfirmasi && (
         <div className="modal-overlay" onClick={() => setModalKonfirmasi(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-judul">{modalKonfirmasi.judul}</div>
+            <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {modalKonfirmasi.bahaya ? <AlertTriangle size={18} className="text-rose-400" /> : <HelpCircle size={18} className="text-sky-400" />}
+              <span>{modalKonfirmasi.judul}</span>
+            </div>
             <div className="modal-pesan">{modalKonfirmasi.pesan}</div>
             <div className="modal-aksi">
               <button
@@ -436,8 +501,10 @@ export default function PanelPetugas() {
                   await aksi();
                 }}
                 disabled={sibuk}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                {modalKonfirmasi.aksiLabel}
+                {modalKonfirmasi.bahaya ? <Trash2 size={14} /> : <Check size={14} />}
+                <span>{modalKonfirmasi.aksiLabel}</span>
               </button>
             </div>
           </div>

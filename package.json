@@ -9,6 +9,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "lucide-react": "^1.39.0",
     "mongodb": "^7.5.0",
     "next": "^15.3.3",
     "react": "^19.1.0",

@@ -2,6 +2,24 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  ShieldCheck,
+  ExternalLink,
+  LogOut,
+  Database,
+  FileSpreadsheet,
+  Copy,
+  Download,
+  Printer,
+  Save,
+  Trash2,
+  RotateCcw,
+  AlertTriangle,
+  X,
+  Check,
+  Layers,
+  Users,
+} from 'lucide-react';
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kolom {
@@ -261,18 +279,29 @@ export default function PanelAdmin() {
   return (
     <>
       <nav className="nav-panel">
-        <span className="merek">⚙️ Panel Admin</span>
+        <span className="merek" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <ShieldCheck size={18} className="text-sky-400" />
+          <span>Panel Admin</span>
+        </span>
         <span
           className={`badge-db ${
             dbStatus.mode === 'mongodb' ? 'badge-db-mongo' : 'badge-db-memory'
           }`}
           title={dbStatus.info}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
         >
-          ● {dbStatus.info}
+          <Database size={12} />
+          <span>{dbStatus.info}</span>
         </span>
-        <a href="/" target="_blank">Lihat Quick Count ↗</a>
+        <a href="/" target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span>Lihat Quick Count</span>
+          <ExternalLink size={13} />
+        </a>
         <span className="spasi" />
-        <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }}>Keluar</a>
+        <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <LogOut size={13} />
+          <span>Keluar</span>
+        </a>
       </nav>
 
       <div className="wadah-sempit">
@@ -282,27 +311,36 @@ export default function PanelAdmin() {
         <div className="panel" style={{ marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>
-              <h2 style={{ fontSize: '1.05rem', marginBottom: 4 }}>📊 Laporan &amp; Berita Acara Rekapitulasi</h2>
+              <h2 style={{ fontSize: '1.05rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <FileSpreadsheet size={18} className="text-sky-400" />
+                <span>Laporan &amp; Berita Acara Rekapitulasi</span>
+              </h2>
               <p style={{ fontSize: '.82rem', color: 'var(--redup)' }}>
                 Cetak Berita Acara resmi panitia atau unduh data perolehan suara dalam format Excel/CSV.
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="btn btn-sekunder btn-kecil" onClick={salinSemuaAkun} disabled={sibuk}>
-                📋 Salin Akun Kolom
+              <button className="btn btn-sekunder btn-kecil" onClick={salinSemuaAkun} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Copy size={13} />
+                <span>Salin Akun Kolom</span>
               </button>
-              <button className="btn btn-sekunder btn-kecil" onClick={unduhCSV} disabled={sibuk}>
-                📥 Unduh CSV/Excel
+              <button className="btn btn-sekunder btn-kecil" onClick={unduhCSV} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Download size={13} />
+                <span>Unduh CSV/Excel</span>
               </button>
-              <button className="btn btn-hijau btn-kecil" onClick={bukaCetakBeritaAcara} disabled={sibuk}>
-                🖨️ Cetak Berita Acara
+              <button className="btn btn-hijau btn-kecil" onClick={bukaCetakBeritaAcara} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Printer size={13} />
+                <span>Cetak Berita Acara</span>
               </button>
             </div>
           </div>
         </div>
 
         <div className="panel" style={{ marginBottom: 20 }}>
-          <h2 style={{ fontSize: '1.05rem', marginBottom: 6 }}>Jumlah Kolom</h2>
+          <h2 style={{ fontSize: '1.05rem', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}>
+            <Layers size={18} className="text-amber-400" />
+            <span>Jumlah Kolom</span>
+          </h2>
           <p style={{ fontSize: '.82rem', color: 'var(--redup)', marginBottom: 14 }}>
             Menambah membuat kolom baru dengan kode bawaan. Mengurangi <strong>menghapus kolom
             bernomor terbesar beserta calon dan suaranya</strong> — lakukan sebelum acara dimulai.
@@ -315,8 +353,9 @@ export default function PanelAdmin() {
               onChange={(e) => setJumlahDraft(e.target.value)}
             />
             <span style={{ fontSize: '.85rem', color: 'var(--redup)' }}>kolom (saat ini {kolom.length})</span>
-            <button className="btn" onClick={simpanJumlah} disabled={sibuk || Number(jumlahDraft) === kolom.length}>
-              Terapkan
+            <button className="btn" onClick={simpanJumlah} disabled={sibuk || Number(jumlahDraft) === kolom.length} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Check size={14} />
+              <span>Terapkan</span>
             </button>
           </div>
         </div>
@@ -324,7 +363,10 @@ export default function PanelAdmin() {
         <div className="panel" style={{ marginBottom: 20, overflowX: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div>
-              <h2 style={{ fontSize: '1.05rem', marginBottom: 4 }}>Kolom &amp; Kode Akses Petugas</h2>
+              <h2 style={{ fontSize: '1.05rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <Users size={18} className="text-sky-400" />
+                <span>Kolom &amp; Kode Akses Petugas</span>
+              </h2>
               <p style={{ fontSize: '.82rem', color: 'var(--redup)' }}>
                 Bagikan kode akses ke petugas masing-masing kolom. Anda dapat mengubah nama kolom dan kode akses kapan saja.
               </p>
@@ -365,7 +407,10 @@ export default function PanelAdmin() {
                   <td style={{ textAlign: 'center' }}>{k.jumlahKandidat}</td>
                   <td style={{ textAlign: 'center', fontWeight: 700 }}>{Number(k.totalSuara).toLocaleString('id-ID')}</td>
                   <td style={{ textAlign: 'right' }}>
-                    <button className="btn btn-kecil" onClick={() => simpanKolom(k.id)} disabled={sibuk}>Simpan</button>
+                    <button className="btn btn-kecil" onClick={() => simpanKolom(k.id)} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Save size={12} />
+                      <span>Simpan</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -374,16 +419,21 @@ export default function PanelAdmin() {
         </div>
 
         <div className="panel">
-          <h2 style={{ fontSize: '1.05rem', marginBottom: 6, color: 'var(--merah)' }}>Zona Berbahaya</h2>
+          <h2 style={{ fontSize: '1.05rem', marginBottom: 6, color: 'var(--merah)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <AlertTriangle size={18} />
+            <span>Zona Berbahaya</span>
+          </h2>
           <p style={{ fontSize: '.82rem', color: 'var(--redup)', marginBottom: 14 }}>
             Gunakan sebelum acara dimulai atau untuk gladi bersih.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn btn-sekunder" onClick={() => reset('suara')} disabled={sibuk}>
-              Nolkan Semua Suara
+            <button className="btn btn-sekunder" onClick={() => reset('suara')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <RotateCcw size={14} />
+              <span>Nolkan Semua Suara</span>
             </button>
-            <button className="btn btn-merah" onClick={() => reset('semua')} disabled={sibuk}>
-              Hapus Semua Calon &amp; Suara
+            <button className="btn btn-merah" onClick={() => reset('semua')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <Trash2 size={14} />
+              <span>Hapus Semua Calon &amp; Suara</span>
             </button>
           </div>
         </div>
@@ -393,7 +443,10 @@ export default function PanelAdmin() {
       {modalKonfirmasi && (
         <div className="modal-overlay" onClick={() => setModalKonfirmasi(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-judul">{modalKonfirmasi.judul}</div>
+            <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {modalKonfirmasi.bahaya ? <AlertTriangle size={18} className="text-rose-400" /> : <ShieldCheck size={18} className="text-emerald-400" />}
+              <span>{modalKonfirmasi.judul}</span>
+            </div>
             <div className="modal-pesan">{modalKonfirmasi.pesan}</div>
             <div className="modal-aksi">
               <button
@@ -413,8 +466,10 @@ export default function PanelAdmin() {
                   await aksi();
                 }}
                 disabled={sibuk}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                {modalKonfirmasi.aksiLabel}
+                {modalKonfirmasi.bahaya ? <Trash2 size={14} /> : <Check size={14} />}
+                <span>{modalKonfirmasi.aksiLabel}</span>
               </button>
             </div>
           </div>
@@ -480,11 +535,13 @@ export default function PanelAdmin() {
             </div>
 
             <div className="modal-aksi" style={{ marginTop: 24, borderTop: '1px solid #ddd', paddingTop: 16 }}>
-              <button type="button" className="btn btn-sekunder" onClick={() => setTampilCetak(false)}>
-                Tutup
+              <button type="button" className="btn btn-sekunder" onClick={() => setTampilCetak(false)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <X size={14} />
+                <span>Tutup</span>
               </button>
-              <button type="button" className="btn btn-hijau" onClick={() => window.print()}>
-                🖨️ Cetak Dokumen Ini
+              <button type="button" className="btn btn-hijau" onClick={() => window.print()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Printer size={14} />
+                <span>Cetak Dokumen Ini</span>
               </button>
             </div>
           </div>

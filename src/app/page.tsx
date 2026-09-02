@@ -1,11 +1,23 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Lock,
+  Pause,
+  Play,
+  Award,
+  Vote,
+  CheckCircle2,
+  ExternalLink,
+} from 'lucide-react';
 
 const REFRESH_MS = 4000;
 const GESER_OTOMATIS_MS = 4000; // kecepatan putar carousel hasil voting
 const LEBAR_NAV_BAWAAN = 216; // lebar kartu nav sebelum terukur
-const JARAK_NAV = 14;         // jarak antar kartu nav (selaras dengan CSS)
+const JARAK_NAV = 14; // jarak antar kartu nav (selaras dengan CSS)
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kandidat { id: string; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
@@ -58,11 +70,17 @@ function SisiTerpilih({ label, kandidat }: { label: string; kandidat: Kandidat[]
         <>
           <span className="avatar-cek">
             <Avatar k={menang} ukuran="jumbo" />
-            <span className="cek-badge">✓</span>
+            <span className="cek-badge" aria-label="Terpilih">
+              <Check size={13} strokeWidth={3} />
+            </span>
           </span>
           <div className="terpilih-nama">{menang.nama}</div>
           {menang.aklamasi ? (
-            <div className="terpilih-suara label-aklamasi">Terpilih secara aklamasi</div>
+            <div className="terpilih-suara label-aklamasi">
+              <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Award size={11} /> Terpilih Aklamasi
+              </span>
+            </div>
           ) : (
             <div className="terpilih-suara"><Odometer nilai={menang.suara} /> suara</div>
           )}
@@ -86,8 +104,8 @@ function SisiTerpilih({ label, kandidat }: { label: string; kandidat: Kandidat[]
 function PanelTerpilih({ kolom }: { kolom: Kolom }) {
   return (
     <div className="panel-terpilih">
-      <div className="terpilih-judul">
-        <span className="cek-kecil">✓</span> Terpilih &mdash; {kolom.nama}
+      <div className="terpilih-judul" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        <CheckCircle2 size={16} className="cek-kecil" /> Terpilih &mdash; {kolom.nama}
       </div>
       <div className="terpilih-isi">
         <SisiTerpilih label="Penatua" kandidat={kolom.penatua} />
@@ -132,14 +150,20 @@ function CarouselTerpilih({ daftar }: { daftar: Kolom[] }) {
     >
       {daftar.length > 1 && (
         <>
-          <button className="panah panah-mini panah-kiri" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">‹</button>
-          <button className="panah panah-mini panah-kanan" onClick={() => geser(1)} aria-label="Terpilih berikutnya">›</button>
+          <button className="panah panah-mini panah-kiri" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">
+            <ChevronLeft size={16} />
+          </button>
+          <button className="panah panah-mini panah-kanan" onClick={() => geser(1)} aria-label="Terpilih berikutnya">
+            <ChevronRight size={16} />
+          </button>
         </>
       )}
       <PanelTerpilih kolom={kolom} key={kolom.id} />
       {daftar.length > 1 && (
         <div className="dots dots-terpilih">
-          <button className="panah-dots" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">‹</button>
+          <button className="panah-dots" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">
+            <ChevronLeft size={14} />
+          </button>
           {daftar.map((k, i) => (
             <button
               key={k.id}
@@ -149,7 +173,9 @@ function CarouselTerpilih({ daftar }: { daftar: Kolom[] }) {
               title={k.nama}
             />
           ))}
-          <button className="panah-dots" onClick={() => geser(1)} aria-label="Terpilih berikutnya">›</button>
+          <button className="panah-dots" onClick={() => geser(1)} aria-label="Terpilih berikutnya">
+            <ChevronRight size={14} />
+          </button>
         </div>
       )}
     </div>
@@ -200,12 +226,23 @@ function BarisHero({ k, warna, maks, unggul }: {
       <Avatar k={k} ukuran="besar" />
       <div className="hero-info">
         <div className="hero-nama-baris">
-          <span className="nama">
-            {unggul && <span className="tanda-unggul" />}{k.nama}
-            {k.aklamasi && <span className="chip-aklamasi">aklamasi</span>}
+          <span className="nama" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {unggul && <Award size={14} className={warna === 'penatua' ? 'text-sky-400' : 'text-amber-400'} />}
+            <span>{k.nama}</span>
+            {k.aklamasi && (
+              <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <Check size={10} /> aklamasi
+              </span>
+            )}
           </span>
           <span className="hero-angka">
-            {k.aklamasi ? <span className="chip-aklamasi" style={{ marginLeft: 0 }}>✓</span> : <Odometer nilai={k.suara} />}
+            {k.aklamasi ? (
+              <span className="chip-aklamasi" style={{ marginLeft: 0, display: 'inline-flex', alignItems: 'center' }}>
+                <Check size={12} />
+              </span>
+            ) : (
+              <Odometer nilai={k.suara} />
+            )}
           </span>
         </div>
         <div className={`bar-mini bar-hero ${warna}`}>
@@ -226,7 +263,11 @@ function SeksiHero({ judul, warna, kandidat, aktif }: {
     <div className="hero-seksi">
       <div className={`label-jabatan ${warna}`}>
         {judul}
-        {aktif && <span className={`badge badge-${warna}`} style={{ padding: '2px 9px', fontSize: '.62rem' }}><span className="titik" />berlangsung</span>}
+        {aktif && (
+          <span className={`badge badge-${warna}`} style={{ padding: '2px 9px', fontSize: '.62rem' }}>
+            <span className="titik" />berlangsung
+          </span>
+        )}
       </div>
       {kandidat.length === 0 ? (
         <div className="teks-kosong">Belum ada calon</div>
@@ -251,7 +292,9 @@ function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; o
         {selesai && menang ? (
           <>
             <Avatar k={menang} ukuran="mini" />
-            <span className="nav-unggul"><span className="cek-kecil">✓</span> {menang.nama}</span>
+            <span className="nav-unggul" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Check size={11} className="cek-kecil" /> {menang.nama}
+            </span>
           </>
         ) : selesai && seri.length ? (
           <span className="nav-unggul seri-teks">Seri — pemilihan ulang</span>
@@ -392,7 +435,10 @@ export default function HalamanQuickCount() {
   return (
     <>
       <header className="header-publik">
-        <h1>Quick Count Pemilihan Penatua &amp; Diaken</h1>
+        <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <Vote size={26} className="text-sky-400" />
+          <span>Quick Count Pemilihan Penatua &amp; Diaken</span>
+        </h1>
         <div className="sub">
           <span className="titik-live" />
           Hasil sementara &middot; diperbarui otomatis
@@ -401,7 +447,10 @@ export default function HalamanQuickCount() {
         </div>
         <div className="statistik">
           <div className="stat">
-            <div className="angka">{data ? `${data.kolomSelesai}/${jumlah}` : '–'}</div>
+            <div className="angka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <CheckCircle2 size={20} className="text-emerald-400" />
+              <span>{data ? `${data.kolomSelesai}/${jumlah}` : '–'}</span>
+            </div>
             <div className="ket">Kolom Selesai</div>
           </div>
           <div className="stat">
@@ -426,7 +475,9 @@ export default function HalamanQuickCount() {
 
             {/* ===== Hero: kolom yang sedang aktif ===== */}
             <div className="hero-wrap" onTouchStart={sentuhMulai} onTouchEnd={sentuhSelesai}>
-              <button className="panah panah-kiri" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">‹</button>
+              <button className="panah panah-kiri" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">
+                <ChevronLeft size={22} />
+              </button>
               <div className="hero" key={kolomAktif.id}>
                 <div className="hero-kepala">
                   <div>
@@ -449,7 +500,9 @@ export default function HalamanQuickCount() {
                     aktif={kolomAktif.tahap === 'diaken' && kolomAktif.petugasAktif} />
                 </div>
               </div>
-              <button className="panah panah-kanan" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">›</button>
+              <button className="panah panah-kanan" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">
+                <ChevronRight size={22} />
+              </button>
             </div>
 
             {/* ===== Strip navigasi center-mode ===== */}
@@ -462,7 +515,9 @@ export default function HalamanQuickCount() {
             </div>
 
             <div className="dots">
-              <button className="panah-dots" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">‹</button>
+              <button className="panah-dots" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">
+                <ChevronLeft size={14} />
+              </button>
               {data.kolom.map((k, i) => (
                 <button
                   key={k.id}
@@ -472,7 +527,9 @@ export default function HalamanQuickCount() {
                   title={k.nama}
                 />
               ))}
-              <button className="panah-dots" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">›</button>
+              <button className="panah-dots" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">
+                <ChevronRight size={14} />
+              </button>
             </div>
 
             <div style={{ textAlign: 'center', marginTop: 14 }}>
@@ -484,7 +541,7 @@ export default function HalamanQuickCount() {
                   ? `Terkunci di ${kolomAktif.nama} — klik untuk lanjut putar otomatis`
                   : `Putar otomatis aktif — klik untuk mengunci di ${kolomAktif.nama}`}
               >
-                {kunci ? '🔒' : '⏸'}
+                {kunci ? <Lock size={16} /> : jeda ? <Play size={16} /> : <Pause size={16} />}
               </button>
             </div>
           </>
@@ -492,7 +549,7 @@ export default function HalamanQuickCount() {
       </main>
 
       <footer style={{ textAlign: 'center', padding: 16, color: 'var(--samar)', fontSize: '.8rem', borderTop: '1px solid var(--panel)' }}>
-        Hasil bersifat sementara hingga penghitungan resmi selesai &middot; <a href="/login" style={{ color: 'var(--samar)' }}>Login petugas</a>
+        Hasil bersifat sementara hingga penghitungan resmi selesai &middot; <a href="/login" style={{ color: 'var(--samar)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>Login petugas <ExternalLink size={12} /></a>
       </footer>
     </>
   );

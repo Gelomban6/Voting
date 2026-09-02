@@ -3,6 +3,8 @@ import { getSession } from '@/lib/auth';
 import { petugasResmi } from '@/lib/db';
 import FormLogin from './FormLogin';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HalamanLogin() {
   // Yang sudah login langsung diarahkan ke panelnya, tidak perlu login ulang
   const session = await getSession();

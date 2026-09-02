@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Vote,
+  Users,
+  Shield,
+  LogIn,
+  ArrowLeft,
+  KeyRound,
+  Lock,
+} from 'lucide-react';
 
 interface PilihanKolom { id: number; nama: string }
 
@@ -60,22 +69,31 @@ export default function FormLogin() {
     fontWeight: 600, fontSize: '.9rem',
     background: aktif ? 'var(--biru-tua)' : 'transparent',
     color: aktif ? '#fff' : 'var(--redup)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    transition: 'all .2s ease',
   });
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <form className="panel" style={{ width: '100%', maxWidth: 400, padding: 32 }} onSubmit={masuk}>
-        <h1 style={{ fontSize: '1.2rem', textAlign: 'center' }}>🗳️ Login Petugas</h1>
-        <p style={{ textAlign: 'center', color: 'var(--redup)', fontSize: '.85rem', margin: '6px 0 22px' }}>
-          Pemilihan Penatua &amp; Diaken
-        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(56, 189, 248, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+            <Vote size={26} className="text-sky-400" />
+          </div>
+          <h1 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 700 }}>Login Petugas</h1>
+          <p style={{ textAlign: 'center', color: 'var(--redup)', fontSize: '.85rem', marginTop: 4 }}>
+            Pemilihan Penatua &amp; Diaken
+          </p>
+        </div>
 
         <div style={{ display: 'flex', gap: 6, background: 'var(--bg)', borderRadius: 12, padding: 5, marginBottom: 20 }}>
           <button type="button" style={gayaTab(mode === 'petugas')} onClick={() => setMode('petugas')}>
-            Petugas Kolom
+            <Users size={15} />
+            <span>Petugas Kolom</span>
           </button>
           <button type="button" style={gayaTab(mode === 'admin')} onClick={() => setMode('admin')}>
-            Admin
+            <Shield size={15} />
+            <span>Admin</span>
           </button>
         </div>
 
@@ -83,7 +101,10 @@ export default function FormLogin() {
 
         {mode === 'petugas' ? (
           <>
-            <label htmlFor="kolom">Kolom / Kelompok</label>
+            <label htmlFor="kolom" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <Users size={14} className="text-sky-400" />
+              <span>Kolom / Kelompok</span>
+            </label>
             <select id="kolom" className="input" value={kolomId} onChange={(e) => setKolomId(Number(e.target.value))} style={{ marginBottom: 16 }}>
               {daftarKolom.length === 0 ? (
                 <option value={kolomId}>Memuat daftar kolom…</option>
@@ -93,24 +114,34 @@ export default function FormLogin() {
                 ))
               )}
             </select>
-            <label htmlFor="kode">Kode Akses Kolom</label>
+            <label htmlFor="kode" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <KeyRound size={14} className="text-sky-400" />
+              <span>Kode Akses Kolom</span>
+            </label>
             <input id="kode" type="password" className="input" value={kode} onChange={(e) => setKode(e.target.value)}
               placeholder="Kode dari panitia" required style={{ marginBottom: 20 }} />
           </>
         ) : (
           <>
-            <label htmlFor="password">Password Admin</label>
+            <label htmlFor="password" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <Lock size={14} className="text-sky-400" />
+              <span>Password Admin</span>
+            </label>
             <input id="password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)}
-              required style={{ marginBottom: 20 }} />
+              required style={{ marginBottom: 20 }} placeholder="Masukkan password admin" />
           </>
         )}
 
-        <button className="btn" style={{ width: '100%' }} disabled={proses}>
-          {proses ? 'Memproses…' : 'Masuk'}
+        <button className="btn" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} disabled={proses}>
+          <LogIn size={16} />
+          <span>{proses ? 'Memproses…' : 'Masuk ke Panel'}</span>
         </button>
 
-        <p style={{ textAlign: 'center', marginTop: 18, fontSize: '.82rem' }}>
-          <a href="/">&larr; Lihat quick count</a>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: '.84rem' }}>
+          <a href="/" style={{ color: 'var(--redup)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <ArrowLeft size={14} />
+            <span>Lihat Quick Count</span>
+          </a>
         </p>
       </form>
     </div>

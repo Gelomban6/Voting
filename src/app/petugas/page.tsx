@@ -3,6 +3,8 @@ import { getSession } from '@/lib/auth';
 import { petugasResmi } from '@/lib/db';
 import PanelPetugas from './PanelPetugas';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HalamanPetugas() {
   const session = await getSession();
   if (!session || session.role !== 'petugas') redirect('/login');
