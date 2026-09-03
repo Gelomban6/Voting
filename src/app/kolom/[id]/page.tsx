@@ -84,31 +84,26 @@ function Avatar({ k, ukuran = 'standar' }: { k: Kandidat; ukuran?: 'standar' | '
   );
 }
 
-// Odometer digit animation
+// Angka bergulir ala odometer: tiap digit menggulung vertikal saat nilai berubah
+const DERET_DIGIT = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
 function Odometer({ nilai }: { nilai: number }) {
-  const str = Math.max(0, nilai).toLocaleString('id-ID');
+  const safeNilai = Number.isFinite(nilai) ? Math.max(0, nilai) : 0;
+  const teks = safeNilai.toLocaleString('id-ID');
   return (
-    <span className="odo" aria-label={String(nilai)}>
-      {str.split('').map((char, i) =>
-        /[0-9]/.test(char) ? (
-          <span className="odo-digit" key={i}>
-            <span
-              className="odo-pita"
-              style={{
-                transform: `translateY(-${Number(char) * 10}%)`,
-                transition: 'transform 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2)',
-              }}
-            >
-              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
-                <span className="odo-n" key={d}>
-                  {d}
-                </span>
+    <span className="odo" aria-label={teks}>
+      {teks.split('').map((huruf, i) =>
+        /\d/.test(huruf) ? (
+          <span className="odo-digit" key={`${teks.length}-${i}`}>
+            <span className="odo-kolom" style={{ transform: `translateY(-${Number(huruf)}em)` }}>
+              {DERET_DIGIT.map((d) => (
+                <span key={d}>{d}</span>
               ))}
             </span>
           </span>
         ) : (
-          <span className="odo-titik" key={i}>
-            {char}
+          <span className="odo-titik" key={`${teks.length}-${i}`}>
+            {huruf}
           </span>
         )
       )}
@@ -298,7 +293,7 @@ export default function HalamanPengamatKolom({
       <header
         style={{
           borderBottom: '1px solid var(--border)',
-          background: 'rgba(15, 23, 42, 0.85)',
+          background: 'rgba(15, 23, 42, 0.92)',
           backdropFilter: 'blur(12px)',
           position: 'sticky',
           top: 0,
@@ -309,51 +304,73 @@ export default function HalamanPengamatKolom({
           style={{
             maxWidth: 1100,
             margin: '0 auto',
-            padding: '12px 16px',
+            padding: '10px 14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 10,
+            gap: 8,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Sisi Kiri: Tombol Kembali & Judul Stasiun */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <Link
               href="/"
               className="btn btn-sekunder btn-kecil"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              title="Lihat semua stasiun"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '6px 10px',
+                flexShrink: 0,
+              }}
+              title="Kembali ke Quick Count Umum"
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={15} />
               <span className="hidden sm:inline">Semua Kolom</span>
+              <span className="inline sm:hidden">Semua</span>
             </Link>
-            <div>
-              <span
+            <div style={{ minWidth: 0 }}>
+              <div
                 style={{
-                  fontSize: '.72rem',
+                  fontSize: '.68rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '.06em',
+                  letterSpacing: '.05em',
                   color: 'var(--samar)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 5,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
-                <span>Pemantau Stasiun Pemilihan</span>
-                <span style={{ opacity: 0.5 }}>·</span>
-                <span style={{ color: 'var(--aksen)', fontWeight: 700 }}>QR Stasiun</span>
-              </span>
-              <h1 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+                <span>Stasiun Pemilihan</span>
+                <span style={{ opacity: 0.4 }}>•</span>
+                <span style={{ color: 'var(--aksen)', fontWeight: 700 }}>Live</span>
+              </div>
+              <h1
+                style={{
+                  fontSize: '1.1rem',
+                  fontWeight: 800,
+                  margin: 0,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  lineHeight: 1.2,
+                }}
+              >
                 {kolomAktif.nama}
               </h1>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Sisi Kanan: Aksi (QR Code, Bagikan, Segarkan) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
             <button
               onClick={() => setTampilModalQR(true)}
               className="btn btn-sekunder btn-kecil"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              title="Tampilkan QR Code Kolom Ini"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px' }}
+              title="Tampilkan QR Code Stasiun Ini"
             >
               <QrCode size={15} className="text-sky-400" />
               <span className="hidden sm:inline">QR Code</span>
@@ -361,168 +378,214 @@ export default function HalamanPengamatKolom({
             <button
               onClick={bagikan}
               className="btn btn-sekunder btn-kecil"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              title="Bagikan Tautan"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px' }}
+              title="Bagikan Tautan Pemantau"
             >
               <Share2 size={14} />
-              <span className="hidden sm:inline">Bagikan</span>
+              <span className="hidden md:inline">Bagikan</span>
             </button>
             <button
               onClick={muatData}
               className="btn btn-kecil"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px 9px',
+              }}
               title="Muat Ulang Sekarang"
             >
-              <RotateCw size={13} />
+              <RotateCw size={14} />
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Container */}
-      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 16px' }}>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '14px 12px 24px' }}>
         {/* Status Card & Live Indicator */}
         <div
           className="panel"
           style={{
-            marginBottom: 20,
-            background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))',
+            marginBottom: 16,
+            padding: '14px 16px',
+            background: 'linear-gradient(145deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.98))',
             border: '1px solid rgba(56, 189, 248, 0.25)',
+            borderRadius: 16,
           }}
         >
+          {/* Baris Atas: Status Live, Tahap, Petugas */}
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: 14,
+              justifyContent: 'space-between',
+              gap: 8,
+              paddingBottom: 12,
+              marginBottom: 12,
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  fontSize: '.72rem',
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  borderRadius: 9999,
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  color: 'var(--hijau)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--hijau)',
+                    boxShadow: '0 0 6px var(--hijau)',
+                  }}
+                />
+                PEMANTAUAN LANGSUNG (LIVE)
+              </span>
+
+              <span
+                style={{
+                  fontSize: '.72rem',
+                  padding: '3px 9px',
+                  borderRadius: 9999,
+                  background:
+                    kolomAktif.tahap === 'selesai'
+                      ? 'rgba(52, 211, 153, 0.15)'
+                      : 'rgba(56, 189, 248, 0.15)',
+                  color:
+                    kolomAktif.tahap === 'selesai' ? 'var(--hijau)' : 'var(--aksen)',
+                  fontWeight: 700,
+                  border: `1px solid ${kolomAktif.tahap === 'selesai' ? 'rgba(52, 211, 153, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`,
+                }}
+              >
+                {TAHAP_LABEL[kolomAktif.tahap]}
+              </span>
+            </div>
+
+            <div>
+              {kolomAktif.petugasAktif ? (
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 5,
+                    fontSize: '.72rem',
+                    color: 'var(--hijau)',
+                    fontWeight: 600,
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                  }}
+                >
+                  <Radio size={12} className="animate-pulse" /> Petugas Sedang Input
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: '.72rem',
+                    color: 'var(--samar)',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  Petugas Standby
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Baris Inti: Kotak Total Suara Terdata & Keterangan Waktu */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 14px',
+                borderRadius: 12,
+                background: 'rgba(0, 0, 0, 0.35)',
+                border: '1px solid rgba(56, 189, 248, 0.2)',
+                flex: '1 1 auto',
+                minWidth: 200,
+                maxWidth: 360,
+              }}
+            >
               <div
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
                   background: 'rgba(56, 189, 248, 0.15)',
                   border: '1px solid rgba(56, 189, 248, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--aksen)',
+                  flexShrink: 0,
                 }}
               >
-                <Vote size={24} />
+                <Vote size={22} />
               </div>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      fontSize: '.72rem',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: 9999,
-                      background: 'rgba(16, 185, 129, 0.15)',
-                      color: 'var(--hijau)',
-                      border: '1px solid rgba(16, 185, 129, 0.35)',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: 'var(--hijau)',
-                        boxShadow: '0 0 6px var(--hijau)',
-                      }}
-                    />
-                    PEMANTAUAN LANGSUNG (LIVE)
-                  </span>
-                  <span
-                    style={{
-                      fontSize: '.72rem',
-                      padding: '2px 8px',
-                      borderRadius: 9999,
-                      background:
-                        kolomAktif.tahap === 'selesai'
-                          ? 'rgba(52, 211, 153, 0.15)'
-                          : 'rgba(56, 189, 248, 0.15)',
-                      color:
-                        kolomAktif.tahap === 'selesai' ? 'var(--hijau)' : 'var(--aksen)',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {TAHAP_LABEL[kolomAktif.tahap]}
-                  </span>
-                  {kolomAktif.petugasAktif ? (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        fontSize: '.72rem',
-                        color: 'var(--hijau)',
-                        fontWeight: 600,
-                      }}
-                    >
-                      <Radio size={12} className="animate-pulse" /> Petugas Sedang Input
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: '.72rem', color: 'var(--samar)' }}>
-                      Petugas Standby
-                    </span>
-                  )}
+                <div style={{ fontSize: '.68rem', color: 'var(--samar)', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>
+                  Total Suara Terdata
                 </div>
-                <div style={{ fontSize: '.84rem', color: 'var(--redup)', marginTop: 4 }}>
-                  Diperbarui {waktuPembaruan} · Sinkronisasi real-time setiap 3.5 detik
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <Odometer nilai={totalSuara} />
+                  <span style={{ fontSize: '.82rem', fontWeight: 500, color: 'var(--redup)' }}>suara</span>
                 </div>
               </div>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                padding: '8px 16px',
-                borderRadius: 12,
-                background: 'rgba(0, 0, 0, 0.25)',
-                border: '1px solid var(--border)',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '.7rem', color: 'var(--samar)', textTransform: 'uppercase' }}>
-                  Total Suara Terdata
-                </div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--teks)' }}>
-                  <Odometer nilai={totalSuara} /> <span style={{ fontSize: '.8rem', fontWeight: 500, color: 'var(--redup)' }}>suara</span>
-                </div>
+            <div style={{ fontSize: '.78rem', color: 'var(--redup)', lineHeight: 1.4 }}>
+              <div>Diperbarui pk. <strong style={{ color: 'var(--teks)', fontFamily: 'monospace' }}>{waktuPembaruan || '--:--:--'}</strong></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3, color: 'var(--samar)' }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--aksen)', display: 'inline-block' }} />
+                <span>Sinkronisasi otomatis setiap 3.5 detik</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Section Grid: Penatua & Diaken */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {/* Penatua */}
-          <div className="panel" style={{ borderTop: '3px solid var(--penatua)' }}>
+          <div className="panel" style={{ borderTop: '3px solid var(--penatua)', padding: '14px 14px' }}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 16,
+                marginBottom: 14,
                 paddingBottom: 10,
                 borderBottom: '1px solid var(--border)',
               }}
             >
               <h2
                 style={{
-                  fontSize: '1.05rem',
+                  fontSize: '1.02rem',
                   fontWeight: 800,
                   margin: 0,
                   display: 'flex',
@@ -536,19 +599,41 @@ export default function HalamanPengamatKolom({
                     height: 10,
                     borderRadius: '50%',
                     background: 'var(--penatua)',
+                    display: 'inline-block',
                   }}
                 />
                 <span>Hasil Calon Penatua</span>
               </h2>
-              <span style={{ fontSize: '.78rem', color: 'var(--redup)' }}>
+              <span
+                style={{
+                  fontSize: '.72rem',
+                  padding: '2px 8px',
+                  borderRadius: 9999,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  color: 'var(--samar)',
+                  fontWeight: 600,
+                }}
+              >
                 {kolomAktif.penatua.length} Calon
               </span>
             </div>
 
             {kolomAktif.penatua.length === 0 ? (
-              <div className="teks-kosong">Belum ada calon penatua</div>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '24px 12px',
+                  color: 'var(--redup)',
+                  fontSize: '.84rem',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  borderRadius: 10,
+                  border: '1px dashed var(--border)',
+                }}
+              >
+                Belum ada data calon penatua
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {kolomAktif.penatua.map((c, i) => {
                   const trend = mapTrend.get(c.id);
                   const isUnggul = i === 0 && c.suara > 0;
@@ -559,22 +644,48 @@ export default function HalamanPengamatKolom({
                     <div
                       key={c.id}
                       className={`baris-hero ${isUnggul ? 'unggul penatua' : ''}`}
-                      style={{ padding: '10px 14px' }}
+                      style={{ padding: '8px 12px', gap: 10 }}
                     >
                       <Avatar k={c} ukuran="besar" />
-                      <div className="info-hero">
-                        <div className="atas-hero">
-                          <span className="hero-nama" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                            <span>{c.nama}</span>
+                      <div className="info-hero" style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          className="atas-hero"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                          }}
+                        >
+                          <span
+                            className="hero-nama"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              minWidth: 0,
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <span
+                              style={{
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {c.nama}
+                            </span>
                             {isUnggul && (
                               <span
                                 style={{
-                                  fontSize: '.65rem',
+                                  fontSize: '.62rem',
                                   padding: '1px 6px',
                                   borderRadius: 9999,
                                   background: 'rgba(56, 189, 248, 0.2)',
                                   color: '#38bdf8',
                                   fontWeight: 700,
+                                  flexShrink: 0,
                                 }}
                               >
                                 {kolomAktif.tahap === 'selesai' ? 'Terpilih' : 'Memimpin'}
@@ -582,7 +693,7 @@ export default function HalamanPengamatKolom({
                             )}
                           </span>
 
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                             {trend && !c.aklamasi && (
                               <span
                                 className={`trend-indicator trend-${trend.arah}`}
@@ -611,7 +722,7 @@ export default function HalamanPengamatKolom({
                           </div>
                         </div>
 
-                        <div className="bar-mini bar-hero penatua">
+                        <div className="bar-mini bar-hero penatua" style={{ marginTop: 4 }}>
                           <div style={{ width: `${persen}%` }} />
                         </div>
                       </div>
@@ -623,20 +734,20 @@ export default function HalamanPengamatKolom({
           </div>
 
           {/* Diaken */}
-          <div className="panel" style={{ borderTop: '3px solid var(--diaken)' }}>
+          <div className="panel" style={{ borderTop: '3px solid var(--diaken)', padding: '14px 14px' }}>
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 16,
+                marginBottom: 14,
                 paddingBottom: 10,
                 borderBottom: '1px solid var(--border)',
               }}
             >
               <h2
                 style={{
-                  fontSize: '1.05rem',
+                  fontSize: '1.02rem',
                   fontWeight: 800,
                   margin: 0,
                   display: 'flex',
@@ -650,19 +761,41 @@ export default function HalamanPengamatKolom({
                     height: 10,
                     borderRadius: '50%',
                     background: 'var(--diaken)',
+                    display: 'inline-block',
                   }}
                 />
                 <span>Hasil Calon Diaken</span>
               </h2>
-              <span style={{ fontSize: '.78rem', color: 'var(--redup)' }}>
+              <span
+                style={{
+                  fontSize: '.72rem',
+                  padding: '2px 8px',
+                  borderRadius: 9999,
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  color: 'var(--samar)',
+                  fontWeight: 600,
+                }}
+              >
                 {kolomAktif.diaken.length} Calon
               </span>
             </div>
 
             {kolomAktif.diaken.length === 0 ? (
-              <div className="teks-kosong">Belum ada calon diaken</div>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '24px 12px',
+                  color: 'var(--redup)',
+                  fontSize: '.84rem',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  borderRadius: 10,
+                  border: '1px dashed var(--border)',
+                }}
+              >
+                Belum ada data calon diaken
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {kolomAktif.diaken.map((c, i) => {
                   const trend = mapTrend.get(c.id);
                   const isUnggul = i === 0 && c.suara > 0;
@@ -673,22 +806,48 @@ export default function HalamanPengamatKolom({
                     <div
                       key={c.id}
                       className={`baris-hero ${isUnggul ? 'unggul diaken' : ''}`}
-                      style={{ padding: '10px 14px' }}
+                      style={{ padding: '8px 12px', gap: 10 }}
                     >
                       <Avatar k={c} ukuran="besar" />
-                      <div className="info-hero">
-                        <div className="atas-hero">
-                          <span className="hero-nama" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                            <span>{c.nama}</span>
+                      <div className="info-hero" style={{ minWidth: 0, flex: 1 }}>
+                        <div
+                          className="atas-hero"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                          }}
+                        >
+                          <span
+                            className="hero-nama"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              minWidth: 0,
+                              overflow: 'hidden',
+                            }}
+                          >
+                            <span
+                              style={{
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              {c.nama}
+                            </span>
                             {isUnggul && (
                               <span
                                 style={{
-                                  fontSize: '.65rem',
+                                  fontSize: '.62rem',
                                   padding: '1px 6px',
                                   borderRadius: 9999,
                                   background: 'rgba(52, 211, 153, 0.2)',
                                   color: '#34d399',
                                   fontWeight: 700,
+                                  flexShrink: 0,
                                 }}
                               >
                                 {kolomAktif.tahap === 'selesai' ? 'Terpilih' : 'Memimpin'}
@@ -696,7 +855,7 @@ export default function HalamanPengamatKolom({
                             )}
                           </span>
 
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                             {trend && !c.aklamasi && (
                               <span
                                 className={`trend-indicator trend-${trend.arah}`}
@@ -725,7 +884,7 @@ export default function HalamanPengamatKolom({
                           </div>
                         </div>
 
-                        <div className="bar-mini bar-hero diaken">
+                        <div className="bar-mini bar-hero diaken" style={{ marginTop: 4 }}>
                           <div style={{ width: `${persen}%` }} />
                         </div>
                       </div>
@@ -739,31 +898,61 @@ export default function HalamanPengamatKolom({
 
         {/* Quick Switcher Footer */}
         {dataQC && dataQC.kolom.length > 1 && (
-          <div className="panel" style={{ marginTop: 24, padding: '14px 16px' }}>
-            <div style={{ fontSize: '.8rem', color: 'var(--redup)', marginBottom: 8, fontWeight: 600 }}>
-              Pindah ke Stasiun Kolom Lain:
+          <div className="panel" style={{ marginTop: 20, padding: '14px 16px', borderRadius: 16 }}>
+            <div
+              style={{
+                fontSize: '.76rem',
+                color: 'var(--samar)',
+                marginBottom: 10,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '.05em',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span>Pindah ke Stasiun Kolom Lain:</span>
+              <span style={{ fontSize: '.72rem', color: 'var(--redup)' }}>{dataQC.kolom.length} Kolom</span>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))',
+                gap: 8,
+              }}
+            >
               {dataQC.kolom.map((k) => (
                 <Link
                   key={k.id}
                   href={`/kolom/${k.id}`}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: 8,
+                    padding: '8px 6px',
+                    borderRadius: 10,
                     fontSize: '.82rem',
                     fontWeight: 600,
                     textDecoration: 'none',
                     background: k.id === targetId ? 'var(--aksen)' : 'rgba(255, 255, 255, 0.05)',
                     color: k.id === targetId ? '#0f172a' : 'var(--teks)',
-                    border: '1px solid var(--border)',
-                    display: 'inline-flex',
+                    border: k.id === targetId ? '1px solid var(--aksen)' : '1px solid var(--border)',
+                    display: 'flex',
                     alignItems: 'center',
-                    gap: 6,
+                    justifyContent: 'center',
+                    gap: 5,
+                    minHeight: 38,
+                    textAlign: 'center',
+                    transition: 'all .15s ease',
                   }}
                 >
-                  <span>{k.nama}</span>
-                  {k.tahap === 'selesai' && <CheckCircle2 size={12} className="text-emerald-400" />}
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {k.nama}
+                  </span>
+                  {k.tahap === 'selesai' && (
+                    <CheckCircle2
+                      size={12}
+                      className={k.id === targetId ? 'text-slate-900' : 'text-emerald-400'}
+                    />
+                  )}
                 </Link>
               ))}
             </div>

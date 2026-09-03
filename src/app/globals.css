@@ -274,16 +274,39 @@ table.tabel { width: 100%; border-collapse: collapse; }
 
 /* ===== Odometer: digit menggulung saat nilai berubah ===== */
 .odo {
-  display: inline-flex; overflow: hidden; height: 1em;
-  line-height: 1; vertical-align: -0.08em;
+  display: inline-flex;
+  overflow: hidden;
+  height: 1em;
+  line-height: 1;
+  vertical-align: -0.08em;
   font-variant-numeric: tabular-nums;
 }
-.odo-digit { display: inline-block; height: 1em; overflow: hidden; }
-.odo-kolom {
-  display: flex; flex-direction: column;
-  transition: transform .8s cubic-bezier(.25, .9, .3, 1);
+.odo-digit {
+  display: inline-block;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
+  position: relative;
 }
-.odo-kolom span { display: block; height: 1em; line-height: 1; }
+.odo-kolom,
+.odo-pita {
+  display: flex !important;
+  flex-direction: column !important;
+  transition: transform .8s cubic-bezier(.25, .9, .3, 1);
+  will-change: transform;
+}
+.odo-kolom span,
+.odo-pita span,
+.odo-n {
+  display: block !important;
+  height: 1em !important;
+  line-height: 1 !important;
+  text-align: center;
+}
+.odo-titik {
+  display: inline-block;
+  line-height: 1;
+}
 
 /* Kilau baris hero saat suara bertambah */
 .baris-hero { border-radius: 12px; transition: background .3s; }
@@ -555,6 +578,37 @@ table.tabel { width: 100%; border-collapse: collapse; }
   .btn-tally { width: 52px; height: 46px; }
 
   .grid-kartu { grid-template-columns: 1fr; }
+
+  /* QR Modal & cards mobile */
+  .modal-box {
+    padding: 18px 14px;
+    border-radius: 16px;
+    max-width: 95%;
+  }
+  .modal-judul {
+    font-size: 1.05rem;
+  }
+  .kartu-qr-single {
+    padding: 12px;
+  }
+  .img-qr-wadah {
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+  .img-qr-wadah img {
+    width: 190px;
+    height: 190px;
+    max-width: 100%;
+  }
+  .grid-kartu-qr {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    max-height: 70vh;
+  }
+  .tautan-qr-teks {
+    font-size: .72rem;
+    padding: 6px 8px;
+  }
 }
 
 /* ===== Modal Dialog Kustom (Mobile & Desktop Friendly) ===== */
