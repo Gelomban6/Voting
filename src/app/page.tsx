@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -432,7 +433,10 @@ function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; o
   );
 }
 
-export default function HalamanQuickCount() {
+function HalamanQuickCountContent() {
+  const searchParams = useSearchParams();
+  const targetKolomParam = searchParams.get('kolom') || searchParams.get('id');
+
   const [data, setData] = useState<DataQC | null>(null);
   const [mapTrend, setMapTrend] = useState<Map<string, TrendKandidat>>(new Map());
   const [gagal, setGagal] = useState(false);
@@ -466,6 +470,17 @@ export default function HalamanQuickCount() {
     const timer = setInterval(muat, REFRESH_MS);
     return () => { hidup = false; clearInterval(timer); };
   }, []);
+
+  // Kunci otomatis ke kolom tertentu jika ada query param ?kolom=X
+  useEffect(() => {
+    if (data && targetKolomParam) {
+      const idx = data.kolom.findIndex((k) => String(k.id) === targetKolomParam);
+      if (idx !== -1) {
+        setAktif(idx);
+        setKunci(true);
+      }
+    }
+  }, [data, targetKolomParam]);
 
   const jumlah = data?.kolom.length ?? 0;
 
@@ -669,5 +684,13 @@ export default function HalamanQuickCount() {
         Hasil bersifat sementara hingga penghitungan resmi selesai &middot; <a href="/login" style={{ color: 'var(--samar)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>Login petugas <ExternalLink size={12} /></a>
       </footer>
     </>
+  );
+}
+
+export default function HalamanQuickCount() {
+  return (
+    <Suspense fallback={<div className="layar-muat"><div className="roda-muat" /><p>Memuat Quick Count...</p></div>}>
+      <HalamanQuickCountContent />
+    </Suspense>
   );
 }

@@ -19,7 +19,10 @@ import {
   Check,
   Layers,
   Users,
+  QrCode,
+  Share2,
 } from 'lucide-react';
+import { generateQRDataURL, unduhQRDataURL, dapatkanUrlPengamatKolom } from '@/lib/qr';
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kolom {
@@ -70,6 +73,14 @@ export default function PanelAdmin() {
   const [sibuk, setSibuk] = useState(false);
   const [rekapData, setRekapData] = useState<RekapDetail | null>(null);
   const [tampilCetak, setTampilCetak] = useState(false);
+
+  // State untuk QR Code
+  const [modalQRKolom, setModalQRKolom] = useState<Kolom | null>(null);
+  const [qrDataUrlSingle, setQrDataUrlSingle] = useState<string>('');
+  const [modalSemuaQR, setModalSemuaQR] = useState(false);
+  const [petaQRDataUrl, setPetaQRDataUrl] = useState<Record<number, string>>({});
+  const [memuatQR, setMemuatQR] = useState(false);
+  const [pesanTersalinId, setPesanTersalinId] = useState<number | null>(null);
 
   const [modalKonfirmasi, setModalKonfirmasi] = useState<{
     judul: string;
@@ -271,6 +282,47 @@ export default function PanelAdmin() {
     }
   }
 
+  // ==== Helper Fungsi QR Code Stasiun ====
+  async function bukaModalQR(k: Kolom) {
+    setModalQRKolom(k);
+    setQrDataUrlSingle('');
+    try {
+      const url = dapatkanUrlPengamatKolom(k.id);
+      const dataUrl = await generateQRDataURL(url, 320);
+      setQrDataUrlSingle(dataUrl);
+    } catch {
+      tampilkan('gagal', 'Gagal menghasilkan QR Code untuk ' + k.nama);
+    }
+  }
+
+  async function bukaModalSemuaQR() {
+    setModalSemuaQR(true);
+    setMemuatQR(true);
+    try {
+      const peta: Record<number, string> = {};
+      for (const k of kolom) {
+        const url = dapatkanUrlPengamatKolom(k.id);
+        peta[k.id] = await generateQRDataURL(url, 260);
+      }
+      setPetaQRDataUrl(peta);
+    } catch {
+      tampilkan('gagal', 'Gagal menghasilkan beberapa QR Code');
+    } finally {
+      setMemuatQR(false);
+    }
+  }
+
+  function salinTautanPengamat(id: number) {
+    const url = dapatkanUrlPengamatKolom(id);
+    navigator.clipboard.writeText(url);
+    setPesanTersalinId(id);
+    setTimeout(() => setPesanTersalinId(null), 2500);
+  }
+
+  function unduhKartuQR(id: number, nama: string, dataUrl: string) {
+    unduhQRDataURL(dataUrl, `QR_Kolom_${id}_${nama.replace(/\s+/g, '_')}.png`);
+  }
+
   async function keluar() {
     await fetch('/api/logout', { method: 'POST' });
     router.push('/login');
@@ -320,6 +372,10 @@ export default function PanelAdmin() {
               </p>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-sekunder btn-kecil" onClick={bukaModalSemuaQR} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <QrCode size={13} className="text-sky-400" />
+                <span>QR Code Semua Kolom</span>
+              </button>
               <button className="btn btn-sekunder btn-kecil" onClick={salinSemuaAkun} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <Copy size={13} />
                 <span>Salin Akun Kolom</span>
@@ -380,6 +436,7 @@ export default function PanelAdmin() {
                 <th>Tahap</th>
                 <th style={{ textAlign: 'center' }}>Calon</th>
                 <th style={{ textAlign: 'center' }}>Suara</th>
+                <th style={{ textAlign: 'center' }}>QR Pengamat</th>
                 <th></th>
               </tr>
             </thead>
@@ -406,6 +463,18 @@ export default function PanelAdmin() {
                   </td>
                   <td style={{ textAlign: 'center' }}>{k.jumlahKandidat}</td>
                   <td style={{ textAlign: 'center', fontWeight: 700 }}>{Number(k.totalSuara).toLocaleString('id-ID')}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn btn-sekunder btn-kecil"
+                      onClick={() => bukaModalQR(k)}
+                      title={`Tampilkan QR Code untuk pemantauan ${k.nama}`}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                    >
+                      <QrCode size={13} className="text-sky-400" />
+                      <span>QR Code</span>
+                    </button>
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <button className="btn btn-kecil" onClick={() => simpanKolom(k.id)} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <Save size={12} />
@@ -478,7 +547,7 @@ export default function PanelAdmin() {
 
       {/* Modal / Tampilan Cetak Berita Acara */}
       {tampilCetak && rekapData && (
-        <div className="modal-overlay" onClick={() => setTampilCetak(false)}>
+        <div className="modal-overlay modal-cetak-aktif" onClick={() => setTampilCetak(false)}>
           <div
             className="modal-box wadah-cetak"
             style={{ maxWidth: 840, maxHeight: '90vh', overflowY: 'auto', background: '#fff', color: '#111' }}
@@ -542,6 +611,206 @@ export default function PanelAdmin() {
               <button type="button" className="btn btn-hijau" onClick={() => window.print()} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <Printer size={14} />
                 <span>Cetak Dokumen Ini</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal QR Code Single Kolom */}
+      {modalQRKolom && (
+        <div className="modal-overlay" onClick={() => setModalQRKolom(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <QrCode size={20} className="text-sky-400" />
+              <span>QR Code Stasiun: {modalQRKolom.nama}</span>
+            </div>
+            <p className="modal-pesan" style={{ marginBottom: 16 }}>
+              Pindai QR Code di bawah dengan kamera ponsel untuk memantau perolehan suara secara langsung (real-time) khusus stasiun <strong>{modalQRKolom.nama}</strong>.
+            </p>
+
+            <div className="kartu-qr-single">
+              <div className="img-qr-wadah">
+                {qrDataUrlSingle ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={qrDataUrlSingle} alt={`QR Code ${modalQRKolom.nama}`} />
+                ) : (
+                  <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--redup)' }}>
+                    Menghasilkan QR Code...
+                  </div>
+                )}
+              </div>
+              <div className="tautan-qr-teks">
+                {dapatkanUrlPengamatKolom(modalQRKolom.id)}
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-sekunder btn-kecil"
+                  onClick={() => salinTautanPengamat(modalQRKolom.id)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Copy size={13} />
+                  <span>{pesanTersalinId === modalQRKolom.id ? 'Tersalin!' : 'Salin Tautan'}</span>
+                </button>
+                {qrDataUrlSingle && (
+                  <button
+                    type="button"
+                    className="btn btn-sekunder btn-kecil"
+                    onClick={() => unduhKartuQR(modalQRKolom.id, modalQRKolom.nama, qrDataUrlSingle)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Download size={13} />
+                    <span>Unduh PNG</span>
+                  </button>
+                )}
+                <a
+                  href={dapatkanUrlPengamatKolom(modalQRKolom.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sekunder btn-kecil"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+                >
+                  <ExternalLink size={13} />
+                  <span>Buka Hasil</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="modal-aksi" style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setModalQRKolom(null)}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal QR Code Seluruh Kolom (Print-Ready Sheets) */}
+      {modalSemuaQR && (
+        <div className="modal-overlay modal-cetak-aktif" onClick={() => setModalSemuaQR(false)}>
+          <div
+            className="modal-box modal-lebar"
+            style={{ maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Dialog (disembunyikan saat cetak) */}
+            <div className="tidak-cetak" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <QrCode size={20} className="text-sky-400" />
+                  <span>QR Code Pemantauan Seluruh Kolom ({kolom.length} Stasiun)</span>
+                </h2>
+                <p style={{ fontSize: '.84rem', color: 'var(--redup)', marginTop: 4 }}>
+                  Cetak kartu QR ini untuk diletakkan di bilik/meja masing-masing kolom agar saksi dan jemaat dapat memantau perolehan suara secara real-time.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn btn-hijau btn-kecil"
+                  onClick={() => window.print()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Printer size={14} />
+                  <span>Cetak Semua Kartu QR</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sekunder btn-kecil"
+                  onClick={() => setModalSemuaQR(false)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            {memuatQR ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--redup)' }}>
+                <div className="roda-muat" style={{ margin: '0 auto 12px' }} />
+                <span>Menghasilkan QR Code untuk {kolom.length} kolom...</span>
+              </div>
+            ) : (
+              <div className="grid-kartu-qr wadah-cetak-qr">
+                {kolom.map((k) => {
+                  const dataUrl = petaQRDataUrl[k.id];
+                  const url = dapatkanUrlPengamatKolom(k.id);
+                  return (
+                    <div key={k.id} className="kartu-qr-grid-item kartu-qr-print">
+                      <h3>{k.nama}</h3>
+                      <p className="instruksi-qr">
+                        Pindai untuk memantau perolehan suara langsung (real-time)
+                      </p>
+                      <div className="img-qr-wadah">
+                        {dataUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={dataUrl} alt={`QR Code ${k.nama}`} />
+                        ) : (
+                          <div style={{ width: 150, height: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            ...
+                          </div>
+                        )}
+                      </div>
+                      <div className="url-print tautan-qr-teks" style={{ fontSize: '.72rem', margin: '4px 0 10px' }}>
+                        {url}
+                      </div>
+                      <div className="tidak-cetak" style={{ display: 'flex', gap: 6, width: '100%', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-sekunder btn-kecil"
+                          onClick={() => salinTautanPengamat(k.id)}
+                          style={{ padding: '4px 8px', fontSize: '.76rem' }}
+                        >
+                          <Copy size={11} />
+                          <span>{pesanTersalinId === k.id ? 'Tersalin' : 'Salin'}</span>
+                        </button>
+                        {dataUrl && (
+                          <button
+                            type="button"
+                            className="btn btn-sekunder btn-kecil"
+                            onClick={() => unduhKartuQR(k.id, k.nama, dataUrl)}
+                            style={{ padding: '4px 8px', fontSize: '.76rem' }}
+                          >
+                            <Download size={11} />
+                            <span>PNG</span>
+                          </button>
+                        )}
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sekunder btn-kecil"
+                          style={{ padding: '4px 8px', fontSize: '.76rem', textDecoration: 'none' }}
+                        >
+                          <ExternalLink size={11} />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="modal-aksi tidak-cetak" style={{ marginTop: 20 }}>
+              <button
+                type="button"
+                className="btn btn-sekunder"
+                onClick={() => setModalSemuaQR(false)}
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                className="btn btn-hijau"
+                onClick={() => window.print()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Printer size={14} />
+                <span>Cetak Semua Kartu QR</span>
               </button>
             </div>
           </div>
