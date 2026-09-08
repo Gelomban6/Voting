@@ -42,7 +42,7 @@ function deteksiTipeGambar(buf: Buffer): string | null {
   return null;
 }
 
-// POST (multipart): unggah/ganti foto kandidat — field "id" dan "foto"
+// POST (multipart): unggah/ganti foto kandidat (field "id" dan "foto")
 export async function POST(req: Request) {
   const session = await sesiPetugasValid();
   if (!session) {

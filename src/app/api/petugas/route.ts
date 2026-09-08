@@ -14,7 +14,7 @@ export async function GET() {
   const kolom = await petugasResmi(session.kolomId, session.token);
   if (!kolom) {
     return NextResponse.json(
-      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { error: 'Sesi berakhir: kolom ini login di perangkat lain.' },
       { status: 401 }
     );
   }

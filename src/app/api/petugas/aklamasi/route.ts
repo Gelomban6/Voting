@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { koleksiKolom, koleksiKandidat, ObjectId, petugasResmi } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
-// POST: aklamasi — diaken ditetapkan dari peringkat 2 suara penatua,
+// POST: aklamasi, diaken ditetapkan dari peringkat 2 suara penatua,
 // tanpa sesi voting diaken. Kolom langsung berstatus selesai.
 export async function POST() {
   const session = await getSession();
@@ -16,7 +16,7 @@ export async function POST() {
   const k = await petugasResmi(session.kolomId, session.token);
   if (!k) {
     return NextResponse.json(
-      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { error: 'Sesi berakhir: kolom ini login di perangkat lain.' },
       { status: 401 }
     );
   }
@@ -48,13 +48,13 @@ export async function POST() {
   }
   if (pertama.suara === kedua.suara) {
     return NextResponse.json(
-      { error: 'Suara peringkat 1 dan 2 seri — peringkat belum jelas, aklamasi tidak bisa dilakukan.' },
+      { error: 'Suara peringkat 1 dan 2 seri: peringkat belum jelas, aklamasi tidak bisa dilakukan.' },
       { status: 409 }
     );
   }
   if (ketiga && ketiga.suara === kedua.suara) {
     return NextResponse.json(
-      { error: 'Ada lebih dari satu calon di peringkat 2 (seri) — aklamasi tidak bisa dilakukan.' },
+      { error: 'Ada lebih dari satu calon di peringkat 2 (seri): aklamasi tidak bisa dilakukan.' },
       { status: 409 }
     );
   }

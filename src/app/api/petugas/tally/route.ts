@@ -26,13 +26,13 @@ export async function POST(req: Request) {
   const kolom = await petugasResmi(session.kolomId, session.token);
   if (!kolom) {
     return NextResponse.json(
-      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { error: 'Sesi berakhir: kolom ini login di perangkat lain.' },
       { status: 401 }
     );
   }
   if (kolom.tahap === 'selesai') {
     return NextResponse.json(
-      { error: 'Suara terkunci — sesi jabatan ini tidak sedang berlangsung.' },
+      { error: 'Suara terkunci: sesi jabatan ini tidak sedang berlangsung.' },
       { status: 409 }
     );
   }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
   if (!hasil) {
     return NextResponse.json(
-      { error: 'Suara terkunci — sesi jabatan ini tidak sedang berlangsung.' },
+      { error: 'Suara terkunci: sesi jabatan ini tidak sedang berlangsung.' },
       { status: 409 }
     );
   }

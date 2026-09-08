@@ -9,7 +9,7 @@ export interface KolomDoc {
   nama: string;
   kode: string;
   tahap: Tahap;
-  // Token sesi petugas yang sedang aktif — satu sesi per kolom;
+  // Token sesi petugas yang sedang aktif: satu sesi per kolom;
   // login dari perangkat lain menggantikan token sehingga sesi lama putus.
   sesiToken?: string | null;
   // Kapan terakhir petugas kolom ini memanggil API (heartbeat)
@@ -331,7 +331,7 @@ async function sambung(): Promise<Db> {
   await client.connect();
   const database = client.db(config.db.name);
 
-  // Seed kolom 1..N hanya saat database masih kosong —
+  // Seed kolom 1..N hanya saat database masih kosong,
   // setelah itu jumlah kolom sepenuhnya dikelola admin.
   const kolom = database.collection<KolomDoc>('kolom');
   const ada = await kolom.countDocuments();

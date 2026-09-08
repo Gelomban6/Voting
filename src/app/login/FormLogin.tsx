@@ -65,7 +65,7 @@ export default function FormLogin() {
   }
 
   const gayaTab = (aktif: boolean): React.CSSProperties => ({
-    flex: 1, padding: '10px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+    flex: 1, padding: '10px 0', minHeight: 44, borderRadius: 10, border: 'none', cursor: 'pointer',
     fontWeight: 600, fontSize: '.9rem',
     background: aktif ? 'var(--biru-tua)' : 'transparent',
     color: aktif ? '#fff' : 'var(--redup)',
@@ -77,8 +77,8 @@ export default function FormLogin() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <form className="panel" style={{ width: '100%', maxWidth: 400, padding: 32 }} onSubmit={masuk}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(56, 189, 248, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-            <Vote size={26} className="text-sky-400" />
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(56, 189, 248, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, color: 'var(--biru)' }}>
+            <Vote size={26} />
           </div>
           <h1 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 700 }}>Login Petugas</h1>
           <p style={{ textAlign: 'center', color: 'var(--redup)', fontSize: '.85rem', marginTop: 4 }}>
@@ -86,12 +86,24 @@ export default function FormLogin() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, background: 'var(--bg)', borderRadius: 12, padding: 5, marginBottom: 20 }}>
-          <button type="button" style={gayaTab(mode === 'petugas')} onClick={() => setMode('petugas')}>
+        <div role="tablist" style={{ display: 'flex', gap: 6, background: 'var(--bg)', borderRadius: 12, padding: 5, marginBottom: 20 }}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'petugas'}
+            style={gayaTab(mode === 'petugas')}
+            onClick={() => setMode('petugas')}
+          >
             <Users size={15} />
             <span>Petugas Kolom</span>
           </button>
-          <button type="button" style={gayaTab(mode === 'admin')} onClick={() => setMode('admin')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'admin'}
+            style={gayaTab(mode === 'admin')}
+            onClick={() => setMode('admin')}
+          >
             <Shield size={15} />
             <span>Admin</span>
           </button>

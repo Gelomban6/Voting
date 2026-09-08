@@ -74,7 +74,6 @@ export default function PanelAdmin() {
   const [rekapData, setRekapData] = useState<RekapDetail | null>(null);
   const [tampilCetak, setTampilCetak] = useState(false);
 
-  // State untuk QR Code
   const [modalQRKolom, setModalQRKolom] = useState<Kolom | null>(null);
   const [qrDataUrlSingle, setQrDataUrlSingle] = useState<string>('');
   const [modalSemuaQR, setModalSemuaQR] = useState(false);
@@ -105,6 +104,19 @@ export default function PanelAdmin() {
   }, [router]);
 
   useEffect(() => { muat(); }, [muat]);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (modalKonfirmasi) setModalKonfirmasi(null);
+        else if (modalQRKolom) setModalQRKolom(null);
+        else if (modalSemuaQR) setModalSemuaQR(false);
+        else if (tampilCetak) setTampilCetak(false);
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [modalKonfirmasi, modalQRKolom, modalSemuaQR, tampilCetak]);
 
   function tampilkan(jenis: 'sukses' | 'gagal', teks: string) {
     setPesan({ jenis, teks });
@@ -198,7 +210,6 @@ export default function PanelAdmin() {
     });
   }
 
-  // ==== Salin Daftar Akun Petugas ke Clipboard ====
   function salinSemuaAkun() {
     if (!kolom.length) return;
     const teks = kolom
@@ -208,7 +219,6 @@ export default function PanelAdmin() {
     tampilkan('sukses', 'Daftar kode akses semua kolom berhasil disalin ke clipboard!');
   }
 
-  // ==== Muat Rekap Detail & Buka Modal Cetak ====
   async function bukaCetakBeritaAcara() {
     setSibuk(true);
     try {
@@ -227,7 +237,6 @@ export default function PanelAdmin() {
     }
   }
 
-  // ==== Download File CSV / Excel ====
   async function unduhCSV() {
     setSibuk(true);
     try {
@@ -282,7 +291,6 @@ export default function PanelAdmin() {
     }
   }
 
-  // ==== Helper Fungsi QR Code Stasiun ====
   async function bukaModalQR(k: Kolom) {
     setModalQRKolom(k);
     setQrDataUrlSingle('');
@@ -399,11 +407,12 @@ export default function PanelAdmin() {
           </h2>
           <p style={{ fontSize: '.82rem', color: 'var(--redup)', marginBottom: 14 }}>
             Menambah membuat kolom baru dengan kode bawaan. Mengurangi <strong>menghapus kolom
-            bernomor terbesar beserta calon dan suaranya</strong> — lakukan sebelum acara dimulai.
+            bernomor terbesar beserta calon dan suaranya</strong> (lakukan sebelum acara dimulai).
           </p>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <input
               type="number" min={1} max={99} className="input"
+              aria-label="Jumlah total kolom"
               style={{ width: 110, textAlign: 'center', fontWeight: 700 }}
               value={jumlahDraft}
               onChange={(e) => setJumlahDraft(e.target.value)}
@@ -445,16 +454,19 @@ export default function PanelAdmin() {
                 <tr key={k.id}>
                   <td style={{ minWidth: 130 }}>
                     <input className="input" style={{ padding: '6px 10px', fontSize: '.85rem' }}
+                      aria-label={`Nama ${k.nama}`}
                       value={draft[k.id]?.nama ?? ''}
                       onChange={(e) => setDraft((p) => ({ ...p, [k.id]: { ...p[k.id], nama: e.target.value } }))} />
                   </td>
                   <td style={{ minWidth: 120 }}>
                     <input className="input" style={{ padding: '6px 10px', fontSize: '.85rem' }}
+                      aria-label={`Kode akses ${k.nama}`}
                       value={draft[k.id]?.kode ?? ''}
                       onChange={(e) => setDraft((p) => ({ ...p, [k.id]: { ...p[k.id], kode: e.target.value } }))} />
                   </td>
                   <td>
                     <select className="input" style={{ padding: '6px 10px', fontSize: '.82rem', width: 'auto' }}
+                      aria-label={`Tahap pemilihan ${k.nama}`}
                       value={k.tahap} onChange={(e) => ubahTahap(k.id, e.target.value as Tahap)}>
                       {(Object.keys(TAHAP_LABEL) as Tahap[]).map((t) => (
                         <option value={t} key={t}>{TAHAP_LABEL[t]}</option>

@@ -57,13 +57,21 @@ export default function PanelPetugas() {
     if (!json.error) setData(json);
   }, [router]);
 
-  // Muat awal + polling 30 detik: heartbeat "petugas aktif", sinkron data
-  // antar perangkat, dan mendeteksi bila kolom ini login di perangkat lain
+  // Muat awal dan polling berkala untuk sinkronisasi data antar perangkat
   useEffect(() => {
     muat();
     const timer = setInterval(muat, 30_000);
     return () => clearInterval(timer);
   }, [muat]);
+
+  useEffect(() => {
+    if (!modalKonfirmasi) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setModalKonfirmasi(null);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [modalKonfirmasi]);
 
   function tampilkan(jenis: 'sukses' | 'gagal', teks: string) {
     setPesan({ jenis, teks });
@@ -89,12 +97,10 @@ export default function PanelPetugas() {
     }
   }
 
-  // ==== Tally: +1 / -1 dengan pembaruan optimistis ====
   async function tally(k: Kandidat, delta: 1 | -1) {
     if (!data) return;
     if (delta === -1 && k.suara === 0) return;
 
-    // Perbarui tampilan seketika
     setData((d) => {
       if (!d) return d;
       const ubah = (arr: Kandidat[]) =>
@@ -111,9 +117,8 @@ export default function PanelPetugas() {
       const json = await res.json();
       if (!res.ok) {
         tampilkan('gagal', json.error ?? 'Gagal menyimpan suara');
-        muat(); // batalkan pembaruan optimistis
+        muat();
       } else {
-        // Sinkronkan angka pasti dari server
         setData((d) => {
           if (!d) return d;
           const ubah = (arr: Kandidat[]) =>
@@ -229,7 +234,6 @@ export default function PanelPetugas() {
     if (await panggil('/api/petugas/tahap', { tahap })) muat();
   }
 
-  // Selesaikan pemilihan — hanya bila sudah ada diaken yang dipilih
   function selesaikanPemilihan() {
     if (!data) return;
     if (data.diaken.length === 0) {
@@ -253,7 +257,6 @@ export default function PanelPetugas() {
     });
   }
 
-  // Aklamasi: diaken ditetapkan dari peringkat 2 suara penatua
   async function aklamasi() {
     if (!data) return;
     const urut = [...data.penatua].sort((a, b) => b.suara - a.suara);
@@ -266,7 +269,7 @@ export default function PanelPetugas() {
     setModalKonfirmasi({
       judul: 'Aklamasi Diaken',
       pesan: `Tetapkan "${kedua.nama}" (peringkat 2 penatua, ${kedua.suara} suara) sebagai DIAKEN secara aklamasi?\n\n` +
-        (adaDiaken ? '⚠️ PERHATIAN: Calon diaken yang sudah ada sebelumnya akan DIHAPUS. ' : '') +
+        (adaDiaken ? 'Perhatian: Calon diaken yang sudah ada sebelumnya akan dihapus. ' : '') +
         'Sesi voting diaken dilewati dan pemilihan kolom ini langsung selesai.',
       aksiLabel: 'Tetapkan Aklamasi',
       bahaya: adaDiaken,
@@ -359,6 +362,7 @@ export default function PanelPetugas() {
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <input
             className="input" placeholder={`Nama calon ${jabatan}…`}
+            aria-label={`Nama calon ${jabatan}`}
             value={namaBaru[jabatan]}
             onChange={(e) => setNamaBaru((p) => ({ ...p, [jabatan]: e.target.value }))}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); tambahKandidat(jabatan); } }}
@@ -383,12 +387,13 @@ export default function PanelPetugas() {
   return (
     <>
       <input type="file" accept="image/jpeg,image/png,image/webp" ref={relFile}
+        aria-label="Unggah foto calon"
         style={{ display: 'none' }} onChange={unggahFoto} />
 
       <nav className="nav-panel">
         <span className="merek" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           <Vote size={18} className="text-sky-400" />
-          <span>{data.kolom.nama} &mdash; Panel Petugas</span>
+          <span>{data.kolom.nama} · Panel Petugas</span>
         </span>
         <a href="/" target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <span>Lihat Quick Count</span>

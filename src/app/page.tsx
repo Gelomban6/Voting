@@ -19,9 +19,9 @@ import {
 } from 'lucide-react';
 
 const REFRESH_MS = 4000;
-const GESER_OTOMATIS_MS = 4000; // kecepatan putar carousel hasil voting
-const LEBAR_NAV_BAWAAN = 216; // lebar kartu nav sebelum terukur
-const JARAK_NAV = 14; // jarak antar kartu nav (selaras dengan CSS)
+const GESER_OTOMATIS_MS = 4000;
+const LEBAR_NAV_BAWAAN = 216;
+const JARAK_NAV = 14;
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kandidat { id: string; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
@@ -59,9 +59,7 @@ function totalKolom(k: Kolom): number {
   return [...k.penatua, ...k.diaken].reduce((a, c) => a + c.suara, 0);
 }
 
-// Penentuan hasil: pemenang tunggal, atau seri (perlu pemilihan ulang).
-// Selalu dihitung dari data terkini — bila kolom dibuka kembali untuk
-// pemilihan ulang, tampilan terpilih otomatis mengikuti hasil baru.
+// Menentukan pemenang atau status seri berdasarkan data terkini
 function hasilAkhir(kandidat: Kandidat[]): { menang: Kandidat | null; seri: Kandidat[] } {
   if (!kandidat.length) return { menang: null, seri: [] };
   const maks = Math.max(...kandidat.map((k) => k.suara));
@@ -71,129 +69,121 @@ function hasilAkhir(kandidat: Kandidat[]): { menang: Kandidat | null; seri: Kand
   return { menang: null, seri: teratas };
 }
 
-// ===== Satu sisi (penatua/diaken) dalam panel terpilih =====
-function SisiTerpilih({ label, kandidat }: { label: string; kandidat: Kandidat[] }) {
+function SeksiTerpilihUtuh({
+  judul,
+  warna,
+  kandidat,
+}: {
+  judul: string;
+  warna: 'penatua' | 'diaken';
+  kandidat: Kandidat[];
+}) {
   const { menang, seri } = hasilAkhir(kandidat);
+  const totalSuaraJabatan = kandidat.reduce((sum, c) => sum + c.suara, 0);
+  const runnerUps = menang
+    ? kandidat.filter((c) => c.id !== menang.id).sort((a, b) => b.suara - a.suara)
+    : [];
+
   return (
-    <div className={`terpilih-sisi ${seri.length ? 'seri' : ''}`}>
-      <div className="terpilih-label">{label}</div>
+    <div className={`seksi-terpilih-utuh ${warna}`}>
+      <div className="seksi-terpilih-header">
+        <div className={`label-jabatan-terpilih ${warna}`}>
+          <Award size={16} />
+          <span>{judul}</span>
+        </div>
+        <div className="seksi-terpilih-suara-total">
+          {totalSuaraJabatan} suara sah
+        </div>
+      </div>
+
       {menang ? (
-        <>
-          <span className="avatar-cek">
-            <Avatar k={menang} ukuran="jumbo" />
-            <span className="cek-badge" aria-label="Terpilih">
-              <Check size={13} strokeWidth={3} />
-            </span>
-          </span>
-          <div className="terpilih-nama">{menang.nama}</div>
-          {menang.aklamasi ? (
-            <div className="terpilih-suara label-aklamasi">
-              <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <Award size={11} /> Terpilih Aklamasi
+        <div className="terpilih-fokus-kartu">
+          <div className="terpilih-fokus-atas">
+            <span className="avatar-cek-hero">
+              <Avatar k={menang} ukuran="jumbo" />
+              <span className="cek-badge-hero" aria-label="Terpilih">
+                <Check size={16} strokeWidth={3.5} />
               </span>
+            </span>
+            <div className="terpilih-fokus-info">
+              <div className="terpilih-nama-hero">{menang.nama}</div>
+              {menang.aklamasi ? (
+                <div className="terpilih-aklamasi-hero">
+                  <span className="chip-aklamasi-hero">
+                    <Award size={13} /> Terpilih Aklamasi
+                  </span>
+                  <div className="terpilih-aklamasi-ket">
+                    Mendapat persetujuan bulat jemaat
+                  </div>
+                </div>
+              ) : (
+                <div className="terpilih-suara-hero">
+                  <div className="terpilih-angka-hero">
+                    <Odometer nilai={menang.suara} />
+                    <span className="satuan-hero">suara</span>
+                  </div>
+                  <div className="terpilih-persen-hero">
+                    {totalSuaraJabatan > 0
+                      ? ((menang.suara / totalSuaraJabatan) * 100).toFixed(1)
+                      : '100'}% perolehan
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="terpilih-suara"><Odometer nilai={menang.suara} /> suara</div>
-          )}
-        </>
-      ) : seri.length ? (
-        <>
-          <div className="terpilih-seri-avatar">
-            {seri.slice(0, 3).map((k) => <Avatar k={k} ukuran="besar" key={k.id} />)}
           </div>
-          <div className="terpilih-nama">{seri.map((k) => k.nama).join(' & ')}</div>
-          <div className="terpilih-suara seri-ket">Seri · {seri[0].suara} suara — menunggu pemilihan ulang</div>
-        </>
+
+          {!menang.aklamasi && totalSuaraJabatan > 0 && (
+            <div className={`bar-mini bar-hero ${warna}`} style={{ marginTop: 12, height: 8 }}>
+              <div style={{ width: `${(menang.suara / totalSuaraJabatan) * 100}%` }} />
+            </div>
+          )}
+
+          {runnerUps.length > 0 && (
+            <div className="terpilih-rincian-lain">
+              <div className="terpilih-rincian-label">Perolehan Calon Lainnya:</div>
+              <div className="terpilih-rincian-list">
+                {runnerUps.map((c) => {
+                  const persen =
+                    totalSuaraJabatan > 0 ? ((c.suara / totalSuaraJabatan) * 100).toFixed(1) : '0';
+                  return (
+                    <div key={c.id} className="terpilih-baris-lain">
+                      <Avatar k={c} ukuran="mini" />
+                      <span className="nama-lain">{c.nama}</span>
+                      <span className="suara-lain">
+                        <Odometer nilai={c.suara} /> suara ({persen}%)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : seri.length > 1 ? (
+        <div className="terpilih-fokus-kartu terpilih-kartu-seri">
+          <div className="terpilih-seri-avatar">
+            {seri.slice(0, 3).map((k) => (
+              <Avatar k={k} ukuran="besar" key={k.id} />
+            ))}
+          </div>
+          <div className="terpilih-nama-hero">{seri.map((k) => k.nama).join(' & ')}</div>
+          <div className="terpilih-seri-angka">
+            Seri masing-masing {seri[0].suara} suara
+          </div>
+          <div className="terpilih-seri-pesan">
+            Perolehan suara berimbang. Menunggu pemungutan suara putaran kedua.
+          </div>
+        </div>
       ) : (
-        <div className="teks-kosong">Belum ada suara</div>
-      )}
-    </div>
-  );
-}
-
-// ===== Kartu calon terpilih — berdiri sendiri, terpisah dari hasil voting =====
-function PanelTerpilih({ kolom }: { kolom: Kolom }) {
-  return (
-    <div className="panel-terpilih">
-      <div className="terpilih-judul" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        <CheckCircle2 size={16} className="cek-kecil" /> Terpilih &mdash; {kolom.nama}
-      </div>
-      <div className="terpilih-isi">
-        <SisiTerpilih label="Penatua" kandidat={kolom.penatua} />
-        <div className="terpilih-pisah" />
-        <SisiTerpilih label="Diaken" kandidat={kolom.diaken} />
-      </div>
-    </div>
-  );
-}
-
-// ===== Carousel tersendiri untuk kolom-kolom yang sudah selesai =====
-function CarouselTerpilih({ daftar }: { daftar: Kolom[] }) {
-  const [indeks, setIndeks] = useState(0);
-  const [jeda, setJeda] = useState(false);
-  const sentuhX = useRef<number | null>(null);
-
-  const aktif = Math.min(indeks, daftar.length - 1);
-
-  useEffect(() => {
-    if (jeda || daftar.length < 2) return;
-    const timer = setInterval(() => setIndeks((i) => (i + 1) % daftar.length), 6000);
-    return () => clearInterval(timer);
-  }, [jeda, daftar.length]);
-
-  function geser(arah: 1 | -1) {
-    setIndeks((aktif + arah + daftar.length) % daftar.length);
-  }
-
-  const kolom = daftar[aktif];
-  return (
-    <div
-      className="terpilih-carousel"
-      onMouseEnter={() => setJeda(true)}
-      onMouseLeave={() => setJeda(false)}
-      onTouchStart={(e) => { sentuhX.current = e.touches[0].clientX; }}
-      onTouchEnd={(e) => {
-        if (sentuhX.current === null) return;
-        const dx = e.changedTouches[0].clientX - sentuhX.current;
-        sentuhX.current = null;
-        if (Math.abs(dx) > 48) geser(dx < 0 ? 1 : -1);
-      }}
-    >
-      {daftar.length > 1 && (
-        <>
-          <button className="panah panah-mini panah-kiri" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">
-            <ChevronLeft size={16} />
-          </button>
-          <button className="panah panah-mini panah-kanan" onClick={() => geser(1)} aria-label="Terpilih berikutnya">
-            <ChevronRight size={16} />
-          </button>
-        </>
-      )}
-      <PanelTerpilih kolom={kolom} key={kolom.id} />
-      {daftar.length > 1 && (
-        <div className="dots dots-terpilih">
-          <button className="panah-dots" onClick={() => geser(-1)} aria-label="Terpilih sebelumnya">
-            <ChevronLeft size={14} />
-          </button>
-          {daftar.map((k, i) => (
-            <button
-              key={k.id}
-              className={`dot ${i === aktif ? 'aktif' : ''}`}
-              onClick={() => setIndeks(i)}
-              aria-label={k.nama}
-              title={k.nama}
-            />
-          ))}
-          <button className="panah-dots" onClick={() => geser(1)} aria-label="Terpilih berikutnya">
-            <ChevronRight size={14} />
-          </button>
+        <div className="teks-kosong" style={{ padding: '24px 0' }}>
+          Belum ada suara tercatat untuk jabatan ini
         </div>
       )}
     </div>
   );
 }
 
-// ===== Angka bergulir ala odometer: tiap digit menggulung vertikal saat berubah =====
+// Odometer gulir vertikal untuk pembaruan angka
 const DERET_DIGIT = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 function Odometer({ nilai }: { nilai: number }) {
@@ -215,7 +205,7 @@ function Odometer({ nilai }: { nilai: number }) {
   );
 }
 
-// ===== Perhitungan perubahan suara & selisih keunggulan (lead) sejak pembaruan terakhir =====
+// Analisis delta perolehan suara dan keunggulan terhadap pemuncak
 function hitungTrendSemuaKolom(
   kolomBaru: Kolom[],
   riwayatRef: React.MutableRefObject<Map<string, { suara: number; lead: number }>>
@@ -225,21 +215,17 @@ function hitungTrendSemuaKolom(
   for (const k of kolomBaru) {
     for (const daftar of [k.penatua, k.diaken]) {
       if (!daftar.length) continue;
-      // Urutkan untuk mencari suara tertinggi (pemuncak) dan peringkat 2
       const urut = [...daftar].sort((a, b) => b.suara - a.suara);
       const maks = urut[0]?.suara ?? 0;
       const peringkatDua = urut[1]?.suara ?? 0;
       const adaSuara = maks > 0;
 
       for (const kandidat of daftar) {
-        // Keunggulan: jika peringkat 1, margin keunggulan thd peringkat 2 (+).
-        // Jika trailing, selisih thd pemuncak (-)
         const isLeader = kandidat.suara === maks && adaSuara;
         const currentLead = isLeader ? (kandidat.suara - peringkatDua) : (kandidat.suara - maks);
 
         const prev = riwayatRef.current.get(kandidat.id);
         if (!prev) {
-          // Pertama kali dimuat
           riwayatRef.current.set(kandidat.id, { suara: kandidat.suara, lead: currentLead });
           hasilTrend.set(kandidat.id, {
             arah: 'tetap',
@@ -274,7 +260,6 @@ function hitungTrendSemuaKolom(
           keterangan = 'Stabil (tidak ada perubahan selisih suara)';
         }
 
-        // Simpan riwayat terbaru
         riwayatRef.current.set(kandidat.id, { suara: kandidat.suara, lead: currentLead });
         hasilTrend.set(kandidat.id, {
           arah,
@@ -289,7 +274,6 @@ function hitungTrendSemuaKolom(
   return hasilTrend;
 }
 
-// ===== Baris kandidat di hero, berkilau saat suaranya bertambah =====
 function BarisHero({ k, warna, maks, unggul, trend }: {
   k: Kandidat; warna: 'penatua' | 'diaken'; maks: number; unggul: boolean; trend?: TrendKandidat;
 }) {
@@ -358,7 +342,6 @@ function BarisHero({ k, warna, maks, unggul, trend }: {
   );
 }
 
-// ===== Seksi jabatan di dalam hero =====
 function SeksiHero({ judul, warna, kandidat, aktif, mapTrend }: {
   judul: string; warna: 'penatua' | 'diaken'; kandidat: Kandidat[]; aktif: boolean; mapTrend?: Map<string, TrendKandidat>;
 }) {
@@ -392,7 +375,6 @@ function SeksiHero({ judul, warna, kandidat, aktif, mapTrend }: {
   );
 }
 
-// ===== Kartu kecil pada strip navigasi =====
 function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; onClick: () => void }) {
   const selesai = kolom.tahap === 'selesai';
   const barisRingkas = (label: 'P' | 'D', warna: 'penatua' | 'diaken', daftar: Kandidat[]) => {
@@ -409,16 +391,28 @@ function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; o
             </span>
           </>
         ) : selesai && seri.length ? (
-          <span className="nav-unggul seri-teks">Seri — pemilihan ulang</span>
+          <span className="nav-unggul seri-teks">Seri (pemilihan ulang)</span>
         ) : (
-          <span className="nav-unggul">{unggul ? `${unggul.nama} · ${unggul.suara}` : '—'}</span>
+          <span className="nav-unggul">{unggul ? `${unggul.nama} · ${unggul.suara}` : '-'}</span>
         )}
       </div>
     );
   };
 
   return (
-    <div className={`kartu-nav ${tengah ? 'tengah' : ''} ${selesai ? 'selesai' : ''}`} onClick={onClick}>
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={`Pilih ${kolom.nama}`}
+      className={`kartu-nav ${tengah ? 'tengah' : ''} ${selesai ? 'selesai' : ''}`}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
       <div className="kartu-judul">
         <h4>{kolom.nama}</h4>
         <span className={`badge badge-${kolom.tahap}`} style={{ padding: '2px 8px', fontSize: '.58rem' }}>
@@ -442,7 +436,8 @@ function HalamanQuickCountContent() {
   const [gagal, setGagal] = useState(false);
   const [aktif, setAktif] = useState(0);
   const [jeda, setJeda] = useState(false);
-  const [kunci, setKunci] = useState(false); // terkunci ke kartu pilihan pengguna
+  const [kunci, setKunci] = useState(false);
+  const [filterSelesai, setFilterSelesai] = useState(false);
   const [lebarWadah, setLebarWadah] = useState(0);
   const [lebarKartu, setLebarKartu] = useState(LEBAR_NAV_BAWAAN);
   const relNav = useRef<HTMLDivElement>(null);
@@ -474,15 +469,20 @@ function HalamanQuickCountContent() {
   // Kunci otomatis ke kolom tertentu jika ada query param ?kolom=X
   useEffect(() => {
     if (data && targetKolomParam) {
-      const idx = data.kolom.findIndex((k) => String(k.id) === targetKolomParam);
-      if (idx !== -1) {
-        setAktif(idx);
+      const idxSemua = data.kolom.findIndex((k) => String(k.id) === targetKolomParam);
+      if (idxSemua !== -1) {
+        setFilterSelesai(false);
+        setAktif(idxSemua);
         setKunci(true);
       }
     }
   }, [data, targetKolomParam]);
 
-  const jumlah = data?.kolom.length ?? 0;
+  const selesaiList = data
+    ? data.kolom.filter((k) => k.tahap === 'selesai' && (k.penatua.length || k.diaken.length))
+    : [];
+  const daftarTampil = filterSelesai && selesaiList.length > 0 ? selesaiList : (data?.kolom ?? []);
+  const jumlah = daftarTampil.length;
 
   // Ukur lebar wadah nav dan lebar kartu (berubah di layar sempit) untuk
   // memusatkan kartu aktif. Diukur ulang saat data pertama tiba dan saat resize.
@@ -522,7 +522,7 @@ function HalamanQuickCountContent() {
     return () => clearInterval(timer);
   }, [jeda, kunci, jumlah, geser]);
 
-  const kolomAktif = data?.kolom[Math.min(aktif, jumlah - 1)];
+  const kolomAktif = daftarTampil[Math.min(aktif, Math.max(0, jumlah - 1))];
 
   // Posisi track: kartu aktif selalu di tengah wadah (center mode)
   const langkah = lebarKartu + JARAK_NAV;
@@ -539,7 +539,7 @@ function HalamanQuickCountContent() {
     if (Math.abs(dx) > 48) geserManual(dx < 0 ? 1 : -1);
   }
 
-  // Usapan pada strip kartu kecil: mendukung flick — usapan cepat/panjang
+  // Usapan pada strip kartu kecil: mendukung flick (usapan cepat atau panjang)
   // melompati beberapa kartu sekaligus sesuai jarak dan kecepatannya
   function navMulai(e: React.TouchEvent) {
     sentuhNav.current = { x: e.touches[0].clientX, t: Date.now() };
@@ -576,15 +576,27 @@ function HalamanQuickCountContent() {
           {gagal && <span style={{ color: 'var(--merah)' }}> &middot; koneksi terputus, mencoba lagi…</span>}
         </div>
         <div className="statistik">
-          <div className="stat">
+          <div
+            className="stat"
+            style={{ cursor: data && data.kolomSelesai > 0 ? 'pointer' : 'default' }}
+            onClick={() => {
+              if (data && data.kolomSelesai > 0) {
+                setFilterSelesai((v) => !v);
+                setAktif(0);
+              }
+            }}
+            title={data && data.kolomSelesai > 0 ? (filterSelesai ? 'Tampilkan semua kolom' : 'Tampilkan khusus kolom terpilih') : undefined}
+          >
             <div className="angka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
               <CheckCircle2 size={20} className="text-emerald-400" />
-              <span>{data ? `${data.kolomSelesai}/${jumlah}` : '–'}</span>
+              <span>{data ? `${data.kolomSelesai}/${data.kolom.length}` : '-'}</span>
             </div>
-            <div className="ket">Kolom Selesai</div>
+            <div className="ket">
+              Kolom Selesai {data && data.kolomSelesai > 0 && <span style={{ fontSize: '.68rem', color: 'var(--biru)' }}>{filterSelesai ? '(aktif)' : '(filter)'}</span>}
+            </div>
           </div>
           <div className="stat">
-            <div className="angka">{data ? <Odometer nilai={data.totalSuara} /> : '–'}</div>
+            <div className="angka">{data ? <Odometer nilai={data.totalSuara} /> : 0}</div>
             <div className="ket">Total Suara</div>
           </div>
         </div>
@@ -595,52 +607,96 @@ function HalamanQuickCountContent() {
           <p style={{ textAlign: 'center', color: 'var(--samar)' }}>Memuat data…</p>
         ) : (
           <>
-            {/* ===== Carousel terpilih: kolom yang sudah selesai, paling atas ===== */}
-            {(() => {
-              const selesaiList = data.kolom.filter(
-                (k) => k.tahap === 'selesai' && (k.penatua.length || k.diaken.length)
-              );
-              return selesaiList.length > 0 && <CarouselTerpilih daftar={selesaiList} />;
-            })()}
+            {selesaiList.length > 0 && selesaiList.length < (data?.kolom.length ?? 0) && (
+              <div className="filter-tab-wrap">
+                <div className="filter-tab-box" role="tablist" aria-label="Pilihan tampilan kolom">
+                  <button
+                    role="tab"
+                    aria-selected={!filterSelesai}
+                    className={`filter-tab-btn ${!filterSelesai ? 'aktif' : ''}`}
+                    onClick={() => { setFilterSelesai(false); setAktif(0); }}
+                  >
+                    <span>Semua Kolom</span>
+                    <span className="filter-tab-badge">{data?.kolom.length ?? 0}</span>
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={filterSelesai}
+                    className={`filter-tab-btn terpilih-tab ${filterSelesai ? 'aktif' : ''}`}
+                    onClick={() => { setFilterSelesai(true); setAktif(0); }}
+                  >
+                    <CheckCircle2 size={13} className="text-emerald-400" />
+                    <span>Khusus Terpilih</span>
+                    <span className="filter-tab-badge">{selesaiList.length}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
-            {/* ===== Hero: kolom yang sedang aktif ===== */}
             <div className="hero-wrap" onTouchStart={sentuhMulai} onTouchEnd={sentuhSelesai}>
               <button className="panah panah-kiri" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">
                 <ChevronLeft size={22} />
               </button>
-              <div className="hero" key={kolomAktif.id}>
+              <div className={`hero ${kolomAktif.tahap === 'selesai' ? 'hero-selesai' : ''}`} key={kolomAktif.id}>
                 <div className="hero-kepala">
                   <div>
+                    {kolomAktif.tahap === 'selesai' && (
+                      <div className="hero-selesai-status">
+                        <span className="badge badge-selesai" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <CheckCircle2 size={13} className="text-emerald-400" /> Penetapan Hasil Terpilih
+                        </span>
+                        <span className="hero-selesai-tag">Penghitungan Selesai</span>
+                      </div>
+                    )}
                     <h2 className="hero-judul">{kolomAktif.nama}</h2>
-                    <span className={`badge badge-${kolomAktif.tahap}`}>
-                      {(kolomAktif.tahap === 'selesai' || kolomAktif.petugasAktif) && <span className="titik" />}
-                      {TAHAP_LABEL[kolomAktif.tahap]}
+                    {kolomAktif.tahap !== 'selesai' && (
+                      <span className={`badge badge-${kolomAktif.tahap}`}>
+                        {kolomAktif.petugasAktif && <span className="titik" />}
+                        {TAHAP_LABEL[kolomAktif.tahap]}
+                      </span>
+                    )}
+                    <span className="hero-total">
+                      <Odometer nilai={totalKolom(kolomAktif)} /> suara masuk
+                      {kolomAktif.tahap === 'selesai' && ' · Berita acara telah disahkan'}
                     </span>
-                    <span className="hero-total"><Odometer nilai={totalKolom(kolomAktif)} /> suara masuk</span>
                   </div>
                   <div className="hero-hitung">
                     {String(aktif + 1).padStart(2, '0')}<span>/{jumlah}</span>
                   </div>
                 </div>
-                <div className="hero-grid">
-                  {/* "berlangsung" hanya menyala bila petugas kolom sedang login/aktif */}
-                  <SeksiHero judul="Penatua" warna="penatua" kandidat={kolomAktif.penatua}
-                    aktif={kolomAktif.tahap === 'penatua' && kolomAktif.petugasAktif}
-                    mapTrend={mapTrend} />
-                  <SeksiHero judul="Diaken" warna="diaken" kandidat={kolomAktif.diaken}
-                    aktif={kolomAktif.tahap === 'diaken' && kolomAktif.petugasAktif}
-                    mapTrend={mapTrend} />
-                </div>
+
+                {kolomAktif.tahap === 'selesai' ? (
+                  <div className="hero-grid-terpilih">
+                    <SeksiTerpilihUtuh
+                      judul="Penatua Terpilih"
+                      warna="penatua"
+                      kandidat={kolomAktif.penatua}
+                    />
+                    <SeksiTerpilihUtuh
+                      judul="Diaken Terpilih"
+                      warna="diaken"
+                      kandidat={kolomAktif.diaken}
+                    />
+                  </div>
+                ) : (
+                  <div className="hero-grid">
+                    <SeksiHero judul="Penatua" warna="penatua" kandidat={kolomAktif.penatua}
+                      aktif={kolomAktif.tahap === 'penatua' && kolomAktif.petugasAktif}
+                      mapTrend={mapTrend} />
+                    <SeksiHero judul="Diaken" warna="diaken" kandidat={kolomAktif.diaken}
+                      aktif={kolomAktif.tahap === 'diaken' && kolomAktif.petugasAktif}
+                      mapTrend={mapTrend} />
+                  </div>
+                )}
               </div>
               <button className="panah panah-kanan" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">
                 <ChevronRight size={22} />
               </button>
             </div>
 
-            {/* ===== Strip navigasi center-mode ===== */}
             <div className="nav-wrap" ref={relNav} onTouchStart={navMulai} onTouchEnd={navSelesai}>
               <div className="nav-track" style={{ transform: `translateX(${offset}px)` }}>
-                {data.kolom.map((k, i) => (
+                {daftarTampil.map((k, i) => (
                   <KartuNav kolom={k} tengah={i === aktif} onClick={() => pilih(i)} key={k.id} />
                 ))}
               </div>
@@ -650,7 +706,7 @@ function HalamanQuickCountContent() {
               <button className="panah-dots" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">
                 <ChevronLeft size={14} />
               </button>
-              {data.kolom.map((k, i) => (
+              {daftarTampil.map((k, i) => (
                 <button
                   key={k.id}
                   className={`dot ${i === aktif ? 'aktif' : ''}`}
@@ -670,8 +726,8 @@ function HalamanQuickCountContent() {
                 onClick={() => setKunci((v) => !v)}
                 aria-label={kunci ? 'Lanjutkan putar otomatis' : 'Kunci di kolom ini'}
                 title={kunci
-                  ? `Terkunci di ${kolomAktif.nama} — klik untuk lanjut putar otomatis`
-                  : `Putar otomatis aktif — klik untuk mengunci di ${kolomAktif.nama}`}
+                  ? `Terkunci di ${kolomAktif.nama}: klik untuk lanjut putar otomatis`
+                  : `Putar otomatis aktif: klik untuk mengunci di ${kolomAktif.nama}`}
               >
                 {kunci ? <Lock size={16} /> : jeda ? <Play size={16} /> : <Pause size={16} />}
               </button>

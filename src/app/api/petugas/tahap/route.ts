@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   const sekarang = await petugasResmi(session.kolomId, session.token);
   if (!sekarang) {
     return NextResponse.json(
-      { error: 'Sesi berakhir — kolom ini login di perangkat lain.' },
+      { error: 'Sesi berakhir: kolom ini login di perangkat lain.' },
       { status: 401 }
     );
   }
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            'Belum ada diaken yang dipilih — tambahkan calon diaken dan hitung suaranya ' +
+            'Belum ada diaken yang dipilih: tambahkan calon diaken dan hitung suaranya ' +
             '(atau kembali ke sesi penatua untuk aklamasi) sebelum menyelesaikan pemilihan.',
         },
         { status: 409 }

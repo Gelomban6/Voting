@@ -18,7 +18,6 @@ import {
   Copy,
   ExternalLink,
   ChevronRight,
-  Sparkles,
 } from 'lucide-react';
 import { generateQRDataURL, unduhQRDataURL } from '@/lib/qr';
 
@@ -84,7 +83,7 @@ function Avatar({ k, ukuran = 'standar' }: { k: Kandidat; ukuran?: 'standar' | '
   );
 }
 
-// Angka bergulir ala odometer: tiap digit menggulung vertikal saat nilai berubah
+// Odometer digit vertikal
 const DERET_DIGIT = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 function Odometer({ nilai }: { nilai: number }) {
@@ -226,13 +225,21 @@ export default function HalamanPengamatKolom({
 
   const kolomAktif = dataQC?.kolom.find((k) => k.id === targetId);
 
-  // Buat QR code saat modal dibuka
   useEffect(() => {
     if (tampilModalQR && kolomAktif) {
       const url = typeof window !== 'undefined' ? window.location.href : `/kolom/${targetId}`;
       generateQRDataURL(url, 300).then(setQrDataUrl);
     }
   }, [tampilModalQR, kolomAktif, targetId]);
+
+  useEffect(() => {
+    if (!tampilModalQR) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setTampilModalQR(false);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [tampilModalQR]);
 
   function salinTautan() {
     if (typeof window !== 'undefined') {
@@ -979,7 +986,7 @@ export default function HalamanPengamatKolom({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={qrDataUrl} alt={`QR Code ${kolomAktif.nama}`} />
                 ) : (
-                  <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+                  <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--samar)' }}>
                     Menghasilkan QR Code...
                   </div>
                 )}

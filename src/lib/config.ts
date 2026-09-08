@@ -1,5 +1,5 @@
 // Konfigurasi aplikasi.
-// Semua rahasia dibaca dari environment (.env.local) — lihat .env.example.
+// Semua rahasia dibaca dari environment (.env.local), lihat .env.example.
 
 function ambilEnv(nama: string, defaultVal: string): string {
   const nilai = process.env[nama];
