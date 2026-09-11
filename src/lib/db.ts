@@ -29,9 +29,21 @@ export interface KandidatDoc {
   fotoVersi: number;
 }
 
+export interface AuditDoc {
+  _id?: ObjectId;
+  waktu: Date;
+  kolomId: number;
+  kandidatId: ObjectId;
+  jabatan: Jabatan;
+  delta: number;
+  suaraBaru: number;
+  ip: string;
+}
+
 interface InMemoryStore {
   kolom: Map<number, KolomDoc>;
   kandidat: Map<string, KandidatDoc>;
+  audit: AuditDoc[];
 }
 
 declare global {
@@ -59,6 +71,7 @@ function getInMemoryStore(): InMemoryStore {
     global._votingInMemoryStore = {
       kolom: kolomMap,
       kandidat: new Map<string, KandidatDoc>(),
+      audit: [],
     };
   }
   return global._votingInMemoryStore;
@@ -427,6 +440,35 @@ export function statusDatabase(): { mode: 'mongodb' | 'memory'; info: string } {
     return { mode: 'memory', info: 'In-Memory (Preview Mode)' };
   }
   return { mode: 'mongodb', info: 'MongoDB Connected' };
+}
+
+// Catat riwayat audit mutasi suara untuk keperluan forensik
+export async function catatAuditTally(entri: {
+  kolomId: number;
+  kandidatId: ObjectId;
+  jabatan: Jabatan;
+  delta: number;
+  suaraBaru: number;
+  ip: string;
+}): Promise<void> {
+  const data: AuditDoc = {
+    ...entri,
+    waktu: new Date(),
+  };
+  if (global._votingUseInMemory) {
+    getInMemoryStore().audit.push(data);
+    return;
+  }
+  try {
+    const d = await db();
+    if (d) {
+      await d.collection<AuditDoc>('audit_log').insertOne(data);
+    } else {
+      getInMemoryStore().audit.push(data);
+    }
+  } catch {
+    getInMemoryStore().audit.push(data);
+  }
 }
 
 export { ObjectId, Binary };

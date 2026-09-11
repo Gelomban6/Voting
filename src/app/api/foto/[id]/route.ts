@@ -26,6 +26,8 @@ export async function GET(
   return new Response(new Uint8Array(kandidat.foto.buffer), {
     headers: {
       'Content-Type': kandidat.fotoTipe,
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Disposition': 'inline',
       // Aman di-cache lama: URL memuat ?v=<fotoVersi> yang berubah tiap unggah
       'Cache-Control': 'public, max-age=86400, immutable',
     },

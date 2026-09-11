@@ -84,8 +84,16 @@ export async function PATCH(req: Request) {
   if (!id) return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
 
   const set: Partial<{ nama: string; kode: string; tahap: Tahap }> = {};
-  if (typeof body.nama === 'string' && body.nama.trim()) set.nama = body.nama.trim();
-  if (typeof body.kode === 'string' && body.kode.trim()) set.kode = body.kode.trim();
+  if (typeof body.nama === 'string' && body.nama.trim()) {
+    const namaTrim = body.nama.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    if (namaTrim.length > 50) return NextResponse.json({ error: 'Nama kolom maksimal 50 karakter' }, { status: 400 });
+    set.nama = namaTrim;
+  }
+  if (typeof body.kode === 'string' && body.kode.trim()) {
+    const kodeTrim = body.kode.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    if (kodeTrim.length > 40) return NextResponse.json({ error: 'Kode kolom maksimal 40 karakter' }, { status: 400 });
+    set.kode = kodeTrim;
+  }
   if (['penatua', 'diaken', 'selesai'].includes(body.tahap as Tahap)) set.tahap = body.tahap;
   if (Object.keys(set).length === 0) {
     return NextResponse.json({ error: 'Tidak ada perubahan' }, { status: 400 });

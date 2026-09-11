@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { koleksiKandidat, ObjectId, petugasResmi } from '@/lib/db';
+import { koleksiKandidat, ObjectId, petugasResmi, catatAuditTally } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
 // POST: tambah/kurangi satu suara { kandidatId, delta: 1 | -1 }
@@ -55,6 +55,17 @@ export async function POST(req: Request) {
       { status: 409 }
     );
   }
+
+  // Rekam audit mutasi suara forensik
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || req.headers.get('x-real-ip') || '127.0.0.1';
+  await catatAuditTally({
+    kolomId: session.kolomId,
+    kandidatId,
+    jabatan: kolom.tahap,
+    delta,
+    suaraBaru: hasil.suara,
+    ip,
+  });
 
   return NextResponse.json({ ok: true, suara: hasil.suara });
 }

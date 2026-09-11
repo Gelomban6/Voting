@@ -4,6 +4,9 @@
 function ambilEnv(nama: string, defaultVal: string): string {
   const nilai = process.env[nama];
   if (!nilai) {
+    if (process.env.NODE_ENV === 'production' && (nama === 'ADMIN_PASSWORD' || nama === 'SESSION_SECRET')) {
+      console.warn(`[KEAMANAN] Perhatian: ${nama} menggunakan nilai bawaan default di mode produksi. Sangat disarankan untuk menyetel nilai rahasia di environment.`);
+    }
     return defaultVal;
   }
   return nilai;

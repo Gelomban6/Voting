@@ -23,11 +23,15 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  const nama = String(body?.nama ?? '').trim();
+  const namaMentah = String(body?.nama ?? '').trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
   const jabatan = body?.jabatan;
-  if (!nama || !['penatua', 'diaken'].includes(jabatan)) {
+  if (!namaMentah || !['penatua', 'diaken'].includes(jabatan)) {
     return NextResponse.json({ error: 'Nama dan jabatan wajib diisi' }, { status: 400 });
   }
+  if (namaMentah.length > 80) {
+    return NextResponse.json({ error: 'Nama calon maksimal 80 karakter' }, { status: 400 });
+  }
+  const nama = namaMentah;
 
   const koleksi = await koleksiKandidat();
   const calonAda = await koleksi.find({ kolomId: session.kolomId, jabatan }).toArray();
@@ -56,8 +60,12 @@ export async function PATCH(req: Request) {
 
   const body = await req.json().catch(() => null);
   const id = keObjectId(body?.id);
-  const nama = String(body?.nama ?? '').trim();
-  if (!id || !nama) return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
+  const namaMentah = String(body?.nama ?? '').trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+  if (!id || !namaMentah) return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
+  if (namaMentah.length > 80) {
+    return NextResponse.json({ error: 'Nama calon maksimal 80 karakter' }, { status: 400 });
+  }
+  const nama = namaMentah;
 
   await (await koleksiKandidat()).updateOne(
     { _id: id, kolomId: session.kolomId },

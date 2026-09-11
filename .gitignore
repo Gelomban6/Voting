@@ -6,3 +6,5 @@ out/
 _php-version/
 perbaikan.txt
 anti-slop/
+graphify-out/
+.env

@@ -59,20 +59,37 @@ export async function POST() {
     );
   }
 
-  // Ganti seluruh calon diaken dengan hasil aklamasi
-  await kandidat.deleteMany({ kolomId: session.kolomId, jabatan: 'diaken' });
-  await kandidat.insertOne({
-    _id: new ObjectId(),
-    kolomId: session.kolomId,
-    jabatan: 'diaken',
-    nama: kedua.nama,
-    suara: kedua.suara, // suara bawaan dari sesi penatua, ditandai aklamasi
-    aklamasi: true,
-    foto: kedua.foto ?? null,
-    fotoTipe: kedua.fotoTipe ?? null,
-    fotoVersi: (kedua.fotoVersi ?? 0) + 1,
-  });
-  await kolom.updateOne({ _id: session.kolomId }, { $set: { tahap: 'selesai' } });
+  // Kunci tahap secara atomik untuk mencegah race condition dari request ganda
+  const transisi = await kolom.updateOne(
+    { _id: session.kolomId, tahap: 'penatua' },
+    { $set: { tahap: 'selesai' } }
+  );
+  if (transisi.modifiedCount === 0) {
+    return NextResponse.json(
+      { error: 'Proses aklamasi sedang berlangsung atau status kolom sudah berubah.' },
+      { status: 409 }
+    );
+  }
+
+  try {
+    // Ganti seluruh calon diaken dengan hasil aklamasi
+    await kandidat.deleteMany({ kolomId: session.kolomId, jabatan: 'diaken' });
+    await kandidat.insertOne({
+      _id: new ObjectId(),
+      kolomId: session.kolomId,
+      jabatan: 'diaken',
+      nama: kedua.nama,
+      suara: kedua.suara, // suara bawaan dari sesi penatua, ditandai aklamasi
+      aklamasi: true,
+      foto: kedua.foto ?? null,
+      fotoTipe: kedua.fotoTipe ?? null,
+      fotoVersi: (kedua.fotoVersi ?? 0) + 1,
+    });
+  } catch (err) {
+    // Kembalikan tahap jika terjadi kegagalan penyimpanan
+    await kolom.updateOne({ _id: session.kolomId }, { $set: { tahap: 'penatua' } });
+    throw err;
+  }
 
   return NextResponse.json({ ok: true, nama: kedua.nama });
 }

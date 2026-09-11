@@ -3,17 +3,36 @@ import { cookies } from 'next/headers';
 import { config } from './config';
 
 export type Session =
-  | { role: 'admin' }
-  | { role: 'petugas'; kolomId: number; token?: string };
+  | { role: 'admin'; token?: string; exp?: number }
+  | { role: 'petugas'; kolomId: number; token?: string; exp?: number };
 
 const COOKIE = 'voting_session';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var _votingAdminActiveToken: string | undefined;
+}
+
+export function setAdminActiveToken(token: string): void {
+  global._votingAdminActiveToken = token;
+}
+
+export function clearAdminActiveToken(): void {
+  global._votingAdminActiveToken = 'invalidated_' + Date.now();
+}
+
+export function isValidAdminToken(token?: string): boolean {
+  if (!global._votingAdminActiveToken) return true;
+  return global._votingAdminActiveToken === token;
+}
 
 function hmac(payload: string): string {
   return crypto.createHmac('sha256', config.sessionSecret).update(payload).digest('base64url');
 }
 
 export function signSession(session: Session): string {
-  const payload = Buffer.from(JSON.stringify(session)).toString('base64url');
+  const exp = session.exp ?? Math.floor(Date.now() / 1000) + 12 * 60 * 60; // 12 jam
+  const payload = Buffer.from(JSON.stringify({ ...session, exp })).toString('base64url');
   return `${payload}.${hmac(payload)}`;
 }
 
@@ -28,7 +47,16 @@ export function verifyToken(token: string | undefined): Session | null {
     return null;
   }
   try {
-    return JSON.parse(Buffer.from(payload, 'base64url').toString()) as Session;
+    const session = JSON.parse(Buffer.from(payload, 'base64url').toString()) as Session;
+    if (session.exp && typeof session.exp === 'number') {
+      if (Math.floor(Date.now() / 1000) > session.exp) {
+        return null; // Sesi telah kedaluwarsa
+      }
+    }
+    if (session.role === 'admin' && !isValidAdminToken(session.token)) {
+      return null; // Sesi admin telah dicabut atau diganti
+    }
+    return session;
   } catch {
     return null;
   }
@@ -44,6 +72,7 @@ export async function setSessionCookie(session: Session): Promise<void> {
   store.set(COOKIE, signSession(session), {
     httpOnly: true,
     sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 60 * 60 * 12, // 12 jam
   });
