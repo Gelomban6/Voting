@@ -11,7 +11,7 @@ import {
   ArrowLeft,
   Check,
   CheckCircle2,
-  Award,
+  UserCheck,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -720,7 +720,7 @@ export default function HalamanPengamatKolom({
                             <span className="hero-angka">
                               {c.aklamasi ? (
                                 <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                  <Award size={12} /> Aklamasi
+                                  <UserCheck size={12} /> Aklamasi
                                 </span>
                               ) : (
                                 <Odometer nilai={c.suara} />
@@ -882,7 +882,7 @@ export default function HalamanPengamatKolom({
                             <span className="hero-angka">
                               {c.aklamasi ? (
                                 <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                  <Award size={12} /> Aklamasi
+                                  <UserCheck size={12} /> Aklamasi
                                 </span>
                               ) : (
                                 <Odometer nilai={c.suara} />
@@ -946,7 +946,7 @@ export default function HalamanPengamatKolom({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 5,
-                    minHeight: 38,
+                    minHeight: 44,
                     textAlign: 'center',
                     transition: 'all .15s ease',
                   }}

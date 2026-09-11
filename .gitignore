@@ -5,3 +5,4 @@ out/
 .env*.local
 _php-version/
 perbaikan.txt
+anti-slop/

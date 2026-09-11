@@ -36,7 +36,8 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible,
-.kartu-nav:focus-visible {
+.kartu-nav:focus-visible,
+.stat:focus-visible {
   outline: 2px solid var(--biru);
   outline-offset: 2px;
 }
@@ -57,7 +58,7 @@ select:focus-visible,
 .btn-hijau:hover { background: #047857; }
 .btn-merah { background: #dc2626; }
 .btn-merah:hover { background: #b91c1c; }
-.btn-kecil { padding: 6px 12px; font-size: .8rem; border-radius: 8px; min-height: 36px; }
+.btn-kecil { padding: 6px 12px; font-size: .8rem; border-radius: 8px; min-height: 44px; min-width: 44px; }
 
 /* Elemen input dan form */
 .input, select.input {
@@ -83,18 +84,16 @@ label { display: block; font-size: .82rem; font-weight: 600; color: var(--redup)
 /* Lencana indikator tahap pemilihan */
 .badge {
   display: inline-flex; align-items: center; gap: 6px;
-  font-size: .68rem; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
-  padding: 4px 11px; border-radius: 99px;
+  font-size: .72rem; font-weight: 600; letter-spacing: .3px;
+  padding: 3px 9px; border-radius: 6px;
 }
-.badge-penatua { background: rgba(56,189,248,.14); color: var(--biru); border: 1px solid rgba(56,189,248,.4); }
-.badge-diaken { background: rgba(251,191,36,.14); color: var(--amber); border: 1px solid rgba(251,191,36,.4); }
-.badge-selesai { background: rgba(52,211,153,.14); color: var(--hijau); border: 1px solid rgba(52,211,153,.4); }
+.badge-penatua { background: rgba(56,189,248,.12); color: var(--biru); border: 1px solid rgba(56,189,248,.35); }
+.badge-diaken { background: rgba(251,191,36,.12); color: var(--amber); border: 1px solid rgba(251,191,36,.35); }
+.badge-selesai { background: rgba(52,211,153,.12); color: var(--hijau); border: 1px solid rgba(52,211,153,.35); }
 .badge .titik {
-  width: 7px; height: 7px; border-radius: 50%; background: currentColor;
-  animation: kedip 1.4s infinite;
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor;
 }
-.badge-selesai .titik { animation: none; }
-@keyframes kedip { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+.badge-selesai .titik { display: none; }
 
 /* Grid kartu ringkasan quick count */
 .grid-kartu {
@@ -116,7 +115,7 @@ label { display: block; font-size: .82rem; font-weight: 600; color: var(--redup)
 
 .seksi-jabatan { border-top: 1px solid var(--border); padding-top: 10px; }
 .seksi-jabatan .label-jabatan {
-  font-size: .7rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  font-size: .72rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
   margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
 }
 .label-jabatan.penatua { color: var(--biru); }
@@ -150,11 +149,11 @@ label { display: block; font-size: .82rem; font-weight: 600; color: var(--redup)
   border-radius: 12px; padding: 10px 26px; text-align: center;
 }
 .stat .angka { font-size: 1.55rem; font-weight: 800; color: var(--biru); font-variant-numeric: tabular-nums; }
-.stat .ket { font-size: .72rem; color: var(--redup); text-transform: uppercase; letter-spacing: 1.2px; }
+.stat .ket { font-size: .72rem; color: var(--redup); text-transform: uppercase; letter-spacing: .4px; }
 
 .titik-live {
   display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-  background: #22c55e; margin-right: 7px; animation: kedip 1.5s infinite;
+  background: #22c55e; margin-right: 7px; vertical-align: middle;
 }
 
 /* Navigasi panel petugas dan admin */
@@ -253,7 +252,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
   align-items: center;
   gap: 3px;
   padding: 2px 7px;
-  border-radius: 9999px;
+  border-radius: 6px;
   font-size: .68rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -670,7 +669,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
 }
 .terpilih-judul {
   text-align: center; font-size: .78rem; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
+  letter-spacing: .5px; text-transform: uppercase;
   color: var(--hijau); margin-bottom: 16px;
 }
 .terpilih-isi {
@@ -683,7 +682,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
   text-align: center;
 }
 .terpilih-label {
-  font-size: .66rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+  font-size: .66rem; font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
   color: var(--samar);
 }
 .terpilih-nama { font-size: 1.08rem; font-weight: 700; letter-spacing: .2px; }
@@ -695,7 +694,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
   .terpilih-sisi { min-width: 0; gap: 5px; }
   .terpilih-nama { font-size: .9rem; }
   .terpilih-suara { font-size: .74rem; }
-  .terpilih-label { font-size: .6rem; letter-spacing: 1.4px; }
+  .terpilih-label { font-size: .64rem; letter-spacing: .5px; }
 }
 
 /* Avatar dengan lencana centang */
@@ -718,10 +717,10 @@ table.tabel { width: 100%; border-collapse: collapse; }
 
 /* Penanda hasil aklamasi */
 .chip-aklamasi {
-  display: inline-block; margin-left: 8px; padding: 1px 8px;
-  font-size: .6rem; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
-  color: var(--hijau); border: 1px solid rgba(52, 211, 153, .45);
-  border-radius: 99px; vertical-align: 1px;
+  display: inline-flex; align-items: center; margin-left: 6px; padding: 2px 7px;
+  font-size: .68rem; font-weight: 600; letter-spacing: .2px;
+  color: var(--hijau); border: 1px solid rgba(52, 211, 153, .35);
+  background: rgba(52, 211, 153, 0.1); border-radius: 6px; vertical-align: middle;
 }
 .label-aklamasi { color: var(--hijau); font-weight: 600; }
 
@@ -773,7 +772,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
 }
 .nav-total {
   margin-top: 8px; font-size: .72rem; font-weight: 700;
-  color: var(--samar); text-transform: uppercase; letter-spacing: .8px;
+  color: var(--samar); text-transform: uppercase; letter-spacing: .4px;
 }
 
 .panah {
@@ -799,8 +798,12 @@ table.tabel { width: 100%; border-collapse: collapse; }
 }
 .panah-dots:active { background: #32415a; }
 .dot {
+  position: relative;
   width: 14px; height: 14px; border-radius: 50%; border: none; cursor: pointer;
   background: var(--border); padding: 0; transition: background .2s, transform .2s;
+}
+.dot::before {
+  content: ''; position: absolute; top: -15px; bottom: -15px; left: -15px; right: -15px;
 }
 .dot.aktif { background: var(--biru); transform: scale(1.25); }
 
@@ -866,8 +869,11 @@ table.tabel { width: 100%; border-collapse: collapse; }
   .nav-ringkas { font-size: .72rem; }
   .nav-total { font-size: .64rem; }
 
-  .dots { gap: 5px; margin-top: 8px; }
-  .dot { width: 10px; height: 10px; }
+  .dots { gap: 8px; margin-top: 8px; padding: 4px 0; }
+  .dot { width: 12px; height: 12px; }
+  .dot::before {
+    content: ''; position: absolute; top: -16px; bottom: -16px; left: -16px; right: -16px;
+  }
   .btn-putar { width: 44px; height: 44px; font-size: .9rem; }
 
   .wadah-sempit { padding: 16px 10px 50px; }

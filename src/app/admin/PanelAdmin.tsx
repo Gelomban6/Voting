@@ -358,10 +358,26 @@ export default function PanelAdmin() {
           <ExternalLink size={13} />
         </a>
         <span className="spasi" />
-        <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <button
+          type="button"
+          onClick={keluar}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--redup)',
+            fontSize: '.9rem',
+            minHeight: 44,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            cursor: 'pointer',
+            padding: '0 8px',
+            fontFamily: 'inherit',
+          }}
+        >
           <LogOut size={13} />
           <span>Keluar</span>
-        </a>
+        </button>
       </nav>
 
       <div className="wadah-sempit">
@@ -450,7 +466,14 @@ export default function PanelAdmin() {
               </tr>
             </thead>
             <tbody>
-              {kolom.map((k) => (
+              {kolom.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--samar)', fontSize: '.88rem' }}>
+                    Belum ada kolom yang terdaftar. Atur jumlah kolom pada panel di atas untuk memulai.
+                  </td>
+                </tr>
+              ) : (
+                kolom.map((k) => (
                 <tr key={k.id}>
                   <td style={{ minWidth: 130 }}>
                     <input className="input" style={{ padding: '6px 10px', fontSize: '.85rem' }}
@@ -494,7 +517,7 @@ export default function PanelAdmin() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
@@ -775,9 +798,9 @@ export default function PanelAdmin() {
                           type="button"
                           className="btn btn-sekunder btn-kecil"
                           onClick={() => salinTautanPengamat(k.id)}
-                          style={{ padding: '4px 8px', fontSize: '.76rem' }}
+                          style={{ padding: '6px 10px', fontSize: '.76rem', minHeight: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                         >
-                          <Copy size={11} />
+                          <Copy size={12} />
                           <span>{pesanTersalinId === k.id ? 'Tersalin' : 'Salin'}</span>
                         </button>
                         {dataUrl && (
@@ -785,9 +808,9 @@ export default function PanelAdmin() {
                             type="button"
                             className="btn btn-sekunder btn-kecil"
                             onClick={() => unduhKartuQR(k.id, k.nama, dataUrl)}
-                            style={{ padding: '4px 8px', fontSize: '.76rem' }}
+                            style={{ padding: '6px 10px', fontSize: '.76rem', minHeight: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                           >
-                            <Download size={11} />
+                            <Download size={12} />
                             <span>PNG</span>
                           </button>
                         )}
@@ -796,9 +819,10 @@ export default function PanelAdmin() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-sekunder btn-kecil"
-                          style={{ padding: '4px 8px', fontSize: '.76rem', textDecoration: 'none' }}
+                          style={{ padding: '6px 10px', fontSize: '.76rem', textDecoration: 'none', minHeight: 44, minWidth: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                          title={`Buka hasil ${k.nama}`}
                         >
-                          <ExternalLink size={11} />
+                          <ExternalLink size={12} />
                         </a>
                       </div>
                     </div>

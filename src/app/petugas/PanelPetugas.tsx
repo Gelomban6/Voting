@@ -8,7 +8,7 @@ import {
   LogOut,
   Check,
   CheckCheck,
-  Award,
+  UserCheck,
   ArrowRight,
   ArrowLeft,
   RotateCcw,
@@ -327,19 +327,27 @@ export default function PanelPetugas() {
 
         {daftar.map((k) => (
           <div key={k.id} className="baris-tally">
-            <div className="relative group cursor-pointer" onClick={() => pilihFoto(k)} title="Klik untuk pasang/ganti foto">
+            <button
+              type="button"
+              className="relative group cursor-pointer"
+              onClick={() => pilihFoto(k)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pilihFoto(k); } }}
+              title="Klik untuk pasang/ganti foto"
+              aria-label={`Ubah foto calon ${k.nama}`}
+              style={{ background: 'transparent', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer', display: 'flex' }}
+            >
               {k.foto ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="avatar besar avatar-klik" src={k.foto} alt={k.nama} />
               ) : (
                 <span className="avatar besar avatar-klik">{inisial(k.nama)}</span>
               )}
-            </div>
+            </button>
             <span className="nama-tally" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>{k.nama}</span>
               {k.aklamasi && (
-                <span style={{ fontSize: '.68rem', fontWeight: 700, color: 'var(--hijau)', textTransform: 'uppercase', letterSpacing: '.8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                  <Award size={11} /> aklamasi
+                <span style={{ fontSize: '.68rem', fontWeight: 700, color: 'var(--hijau)', textTransform: 'uppercase', letterSpacing: '.4px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                  <UserCheck size={11} /> aklamasi
                 </span>
               )}
             </span>
@@ -400,10 +408,26 @@ export default function PanelPetugas() {
           <ExternalLink size={13} />
         </a>
         <span className="spasi" />
-        <a href="#" onClick={(e) => { e.preventDefault(); keluar(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <button
+          type="button"
+          onClick={keluar}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--redup)',
+            fontSize: '.9rem',
+            minHeight: 44,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            cursor: 'pointer',
+            padding: '0 8px',
+            fontFamily: 'inherit',
+          }}
+        >
           <LogOut size={13} />
           <span>Keluar</span>
-        </a>
+        </button>
       </nav>
 
       <div className="wadah-sempit">
@@ -435,7 +459,7 @@ export default function PanelPetugas() {
                   <button className="btn btn-sekunder" onClick={aklamasi} disabled={sibuk}
                     title="Diaken ditetapkan dari peringkat 2 suara penatua, tanpa voting diaken"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Award size={14} className="text-amber-400" />
+                    <UserCheck size={14} className="text-amber-400" />
                     <span>Aklamasi Diaken (Peringkat 2)</span>
                   </button>
                 </>

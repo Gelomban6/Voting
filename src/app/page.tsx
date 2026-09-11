@@ -9,7 +9,7 @@ import {
   Lock,
   Pause,
   Play,
-  Award,
+  UserCheck,
   Vote,
   CheckCircle2,
   ExternalLink,
@@ -88,7 +88,7 @@ function SeksiTerpilihUtuh({
     <div className={`seksi-terpilih-utuh ${warna}`}>
       <div className="seksi-terpilih-header">
         <div className={`label-jabatan-terpilih ${warna}`}>
-          <Award size={16} />
+          <UserCheck size={16} />
           <span>{judul}</span>
         </div>
         <div className="seksi-terpilih-suara-total">
@@ -110,7 +110,7 @@ function SeksiTerpilihUtuh({
               {menang.aklamasi ? (
                 <div className="terpilih-aklamasi-hero">
                   <span className="chip-aklamasi-hero">
-                    <Award size={13} /> Terpilih Aklamasi
+                    <UserCheck size={13} /> Terpilih Aklamasi
                   </span>
                   <div className="terpilih-aklamasi-ket">
                     Mendapat persetujuan bulat jemaat
@@ -298,7 +298,7 @@ function BarisHero({ k, warna, maks, unggul, trend }: {
       <div className="hero-info">
         <div className="hero-nama-baris">
           <span className="nama" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {unggul && <Award size={14} className={warna === 'penatua' ? 'text-sky-400' : 'text-amber-400'} />}
+            {unggul && <UserCheck size={14} className={warna === 'penatua' ? 'text-sky-400' : 'text-amber-400'} />}
             <span>{k.nama}</span>
             {k.aklamasi && (
               <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
@@ -578,9 +578,19 @@ function HalamanQuickCountContent() {
         <div className="statistik">
           <div
             className="stat"
+            role={data && data.kolomSelesai > 0 ? 'button' : undefined}
+            tabIndex={data && data.kolomSelesai > 0 ? 0 : undefined}
+            aria-pressed={data && data.kolomSelesai > 0 ? filterSelesai : undefined}
             style={{ cursor: data && data.kolomSelesai > 0 ? 'pointer' : 'default' }}
             onClick={() => {
               if (data && data.kolomSelesai > 0) {
+                setFilterSelesai((v) => !v);
+                setAktif(0);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (data && data.kolomSelesai > 0 && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
                 setFilterSelesai((v) => !v);
                 setAktif(0);
               }
