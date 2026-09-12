@@ -255,7 +255,7 @@ export default function PanelAdmin() {
       }
 
       let csv = '\uFEFF'; // UTF-8 BOM agar terbaca rapi di Microsoft Excel
-      csv += 'No,Nama Kolom,Tahap,Jumlah Pemilih (DPT),Pemilih Memilih,Total Suara Masuk,Penatua Terpilih,Suara Penatua,Diaken Terpilih,Suara Diaken\r\n';
+      csv += 'No,Nama Kolom,Tahap,Jumlah Pemilih (DPT),Pemilih Memilih,Akumulasi Suara Sah,Penatua Terpilih,Suara Penatua,Diaken Terpilih,Suara Diaken\r\n';
       json.data.forEach((k, idx) => {
         const row = [
           idx + 1,
@@ -349,7 +349,7 @@ export default function PanelAdmin() {
     <>
       <nav className="nav-panel">
         <span className="merek" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <ShieldCheck size={18} className="text-sky-400" />
+          <ShieldCheck size={18} className="teks-penatua" />
           <span>Panel Admin</span>
         </span>
         <span
@@ -397,7 +397,7 @@ export default function PanelAdmin() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
             <div>
               <h2 style={{ fontSize: '1.05rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <FileSpreadsheet size={18} className="text-sky-400" />
+                <FileSpreadsheet size={18} className="teks-penatua" />
                 <span>Laporan &amp; Berita Acara Rekapitulasi</span>
               </h2>
               <p style={{ fontSize: '.82rem', color: 'var(--redup)' }}>
@@ -406,7 +406,7 @@ export default function PanelAdmin() {
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-sekunder btn-kecil" onClick={bukaModalSemuaQR} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <QrCode size={13} className="text-sky-400" />
+                <QrCode size={13} className="teks-penatua" />
                 <span>QR Code Semua Kolom</span>
               </button>
               <button className="btn btn-sekunder btn-kecil" onClick={salinSemuaAkun} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -427,7 +427,7 @@ export default function PanelAdmin() {
 
         <div className="panel" style={{ marginBottom: 20 }}>
           <h2 style={{ fontSize: '1.05rem', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 7 }}>
-            <Layers size={18} className="text-amber-400" />
+            <Layers size={18} className="teks-diaken" />
             <span>Jumlah Kolom</span>
           </h2>
           <p style={{ fontSize: '.82rem', color: 'var(--redup)', marginBottom: 14 }}>
@@ -454,7 +454,7 @@ export default function PanelAdmin() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <div>
               <h2 style={{ fontSize: '1.05rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Users size={18} className="text-sky-400" />
+                <Users size={18} className="teks-penatua" />
                 <span>Kolom &amp; Kode Akses Petugas</span>
               </h2>
               <p style={{ fontSize: '.82rem', color: 'var(--redup)' }}>
@@ -515,7 +515,7 @@ export default function PanelAdmin() {
                       title={`Tampilkan QR Code untuk pemantauan ${k.nama}`}
                       style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}
                     >
-                      <QrCode size={13} className="text-sky-400" />
+                      <QrCode size={13} className="teks-penatua" />
                       <span>QR Code</span>
                     </button>
                   </td>
@@ -557,7 +557,7 @@ export default function PanelAdmin() {
         <div className="modal-overlay" onClick={() => setModalKonfirmasi(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {modalKonfirmasi.bahaya ? <AlertTriangle size={18} className="text-rose-400" /> : <ShieldCheck size={18} className="text-emerald-400" />}
+              {modalKonfirmasi.bahaya ? <AlertTriangle size={18} className="teks-merah" /> : <ShieldCheck size={18} className="teks-selesai" />}
               <span>{modalKonfirmasi.judul}</span>
             </div>
             <div className="modal-pesan">{modalKonfirmasi.pesan}</div>
@@ -602,7 +602,7 @@ export default function PanelAdmin() {
               <h1>PENATUA &amp; DIAKEN PERIODE PELAYANAN</h1>
               <p>
                 Waktu Cetak: {rekapData.waktuCetak} · Pemilih Memilih: {(rekapData.totalPemilihGereja ?? 0).toLocaleString('id-ID')}
-                {rekapData.totalDptGereja && rekapData.totalDptGereja > 0 ? ` dari ${rekapData.totalDptGereja.toLocaleString('id-ID')} DPT (${(((rekapData.totalPemilihGereja ?? 0) / rekapData.totalDptGereja) * 100).toFixed(1)}%)` : ''} · Total Suara Masuk: {rekapData.totalSuaraGereja.toLocaleString('id-ID')} suara
+                {rekapData.totalDptGereja && rekapData.totalDptGereja > 0 ? ` dari ${rekapData.totalDptGereja.toLocaleString('id-ID')} DPT (${(((rekapData.totalPemilihGereja ?? 0) / rekapData.totalDptGereja) * 100).toFixed(1)}%)` : ''} · Akumulasi Suara Sah: {rekapData.totalSuaraGereja.toLocaleString('id-ID')} suara
               </p>
             </div>
 
@@ -673,7 +673,7 @@ export default function PanelAdmin() {
         <div className="modal-overlay" onClick={() => setModalQRKolom(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <QrCode size={20} className="text-sky-400" />
+              <QrCode size={20} className="teks-penatua" />
               <span>QR Code Stasiun: {modalQRKolom.nama}</span>
             </div>
             <p className="modal-pesan" style={{ marginBottom: 16 }}>
@@ -753,7 +753,7 @@ export default function PanelAdmin() {
             <div className="tidak-cetak" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
               <div>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <QrCode size={20} className="text-sky-400" />
+                  <QrCode size={20} className="teks-penatua" />
                   <span>QR Code Pemantauan Seluruh Kolom ({kolom.length} Stasiun)</span>
                 </h2>
                 <p style={{ fontSize: '.84rem', color: 'var(--redup)', marginTop: 4 }}>

@@ -311,7 +311,7 @@ export default function HalamanPengamatKolom({
   const maksDiaken = Math.max(...kolomAktif.diaken.map((c) => c.suara), 1);
 
   return (
-    <div className="min-h-screen pb-16" style={{ background: 'var(--latar)', color: 'var(--teks)' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: 64, background: 'var(--latar)', color: 'var(--teks)' }}>
       {/* Top Navbar */}
       <header
         style={{
@@ -395,7 +395,7 @@ export default function HalamanPengamatKolom({
               style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px' }}
               title="Tampilkan QR Code Stasiun Ini"
             >
-              <QrCode size={15} className="text-sky-400" />
+              <QrCode size={15} className="teks-penatua" />
               <span className="hidden sm:inline">QR Code</span>
             </button>
             <button
@@ -606,7 +606,7 @@ export default function HalamanPengamatKolom({
         </div>
 
         {/* Section Grid: Penatua & Diaken */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid-jabatan">
           <div className="panel" style={{ borderTop: '3px solid var(--penatua)', padding: '14px 14px' }}>
             <div
               style={{
@@ -986,7 +986,7 @@ export default function HalamanPengamatKolom({
                   {k.tahap === 'selesai' && (
                     <CheckCircle2
                       size={12}
-                      className={k.id === targetId ? 'text-slate-900' : 'text-emerald-400'}
+                      style={{ color: k.id === targetId ? '#0f172a' : 'var(--selesai)' }}
                     />
                   )}
                 </Link>
@@ -1001,7 +1001,7 @@ export default function HalamanPengamatKolom({
         <div className="modal-overlay" onClick={() => setTampilModalQR(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <QrCode size={20} className="text-sky-400" />
+              <QrCode size={20} className="teks-penatua" />
               <span>QR Code {kolomAktif.nama}</span>
             </div>
             <p className="modal-pesan" style={{ marginBottom: 16 }}>

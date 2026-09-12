@@ -320,7 +320,7 @@ function BarisHero({ k, warna, maks, unggul, trend }: {
       <div className="hero-info">
         <div className="hero-nama-baris">
           <span className="nama" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {unggul && <UserCheck size={14} className={warna === 'penatua' ? 'text-sky-400' : 'text-amber-400'} />}
+            {unggul && <UserCheck size={14} className={warna === 'penatua' ? 'teks-penatua' : 'teks-diaken'} />}
             <span>{k.nama}</span>
             {k.aklamasi && (
               <span className="chip-aklamasi" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
@@ -588,7 +588,7 @@ function HalamanQuickCountContent() {
     <>
       <header className="header-publik">
         <h1 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-          <Vote size={26} className="text-sky-400" />
+          <Vote size={26} className="teks-penatua" />
           <span>Quick Count Pemilihan Penatua &amp; Diaken</span>
         </h1>
         <div className="sub">
@@ -620,7 +620,7 @@ function HalamanQuickCountContent() {
             title={data && data.kolomSelesai > 0 ? (filterSelesai ? 'Tampilkan semua kolom' : 'Tampilkan khusus kolom terpilih') : undefined}
           >
             <div className="angka" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <CheckCircle2 size={20} className="text-emerald-400" />
+              <CheckCircle2 size={20} className="teks-selesai" />
               <span>{data ? `${data.kolomSelesai}/${data.kolom.length}` : '-'}</span>
             </div>
             <div className="ket">
@@ -643,7 +643,7 @@ function HalamanQuickCountContent() {
           </div>
           <div className="stat">
             <div className="angka">{data ? <Odometer nilai={data.totalSuara} /> : 0}</div>
-            <div className="ket">Total Suara Masuk</div>
+            <div className="ket">Akumulasi Suara Sah</div>
           </div>
         </div>
       </header>
@@ -671,7 +671,7 @@ function HalamanQuickCountContent() {
                     className={`filter-tab-btn terpilih-tab ${filterSelesai ? 'aktif' : ''}`}
                     onClick={() => { setFilterSelesai(true); setAktif(0); }}
                   >
-                    <CheckCircle2 size={13} className="text-emerald-400" />
+                    <CheckCircle2 size={13} className="teks-selesai" />
                     <span>Khusus Terpilih</span>
                     <span className="filter-tab-badge">{selesaiList.length}</span>
                   </button>
@@ -689,7 +689,7 @@ function HalamanQuickCountContent() {
                     {kolomAktif.tahap === 'selesai' && (
                       <div className="hero-selesai-status">
                         <span className="badge badge-selesai" style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                          <CheckCircle2 size={13} className="text-emerald-400" /> Penetapan Hasil Terpilih
+                          <CheckCircle2 size={13} className="teks-selesai" /> Penetapan Hasil Terpilih
                         </span>
                         <span className="hero-selesai-tag">Penghitungan Selesai</span>
                       </div>
@@ -710,7 +710,7 @@ function HalamanQuickCountContent() {
                         </>
                       ) : (
                         <>
-                          <Odometer nilai={totalKolom(kolomAktif)} /> suara masuk
+                          <Odometer nilai={totalKolom(kolomAktif)} /> akumulasi suara
                         </>
                       )}
                       {kolomAktif.tahap === 'selesai' && ' · Berita acara telah disahkan'}

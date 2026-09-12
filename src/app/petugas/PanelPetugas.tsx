@@ -352,11 +352,20 @@ export default function PanelPetugas() {
   function seksiTally(jabatan: Jabatan, judul: string) {
     const daftar = jabatan === 'penatua' ? data!.penatua : data!.diaken;
     const aktif = tahap === jabatan;
-    const warna = jabatan === 'penatua' ? 'var(--biru)' : 'var(--amber)';
+    const warna = jabatan === 'penatua' ? 'var(--penatua)' : 'var(--diaken)';
     const totalSeksi = daftar.reduce((a, k) => a + k.suara, 0);
 
     return (
-      <div className="panel" style={{ opacity: aktif ? 1 : 0.75 }}>
+      <div
+        className="panel"
+        style={{
+          opacity: aktif ? 1 : 0.78,
+          borderTop: aktif
+            ? `3px solid ${jabatan === 'penatua' ? 'var(--penatua)' : 'var(--diaken)'}`
+            : '1px solid var(--border)',
+          transition: 'border-color .2s, opacity .2s',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <h2 style={{ fontSize: '1.05rem', color: warna }}>
             {judul} <span style={{ color: 'var(--samar)', fontWeight: 400, fontSize: '.85rem' }}>· {totalSeksi} suara</span>
@@ -367,7 +376,7 @@ export default function PanelPetugas() {
             <span style={{ fontSize: '.75rem', color: 'var(--samar)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               {posisi > urutan.indexOf(jabatan) ? (
                 <>
-                  <Check size={12} className="text-emerald-400" />
+                  <Check size={12} className="teks-selesai" />
                   <span>tersimpan</span>
                 </>
               ) : (
@@ -380,7 +389,7 @@ export default function PanelPetugas() {
         {daftar.length === 0 && <p className="teks-kosong" style={{ marginBottom: 12 }}>Belum ada calon.</p>}
 
         {daftar.map((k) => (
-          <div key={k.id} className="baris-tally">
+          <div key={k.id} className={`baris-tally ${jabatan}`}>
             <button
               type="button"
               className="relative group cursor-pointer"
@@ -400,7 +409,7 @@ export default function PanelPetugas() {
             <span className="nama-tally" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>{k.nama}</span>
               {k.aklamasi && (
-                <span style={{ fontSize: '.68rem', fontWeight: 700, color: 'var(--hijau)', textTransform: 'uppercase', letterSpacing: '.4px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span style={{ fontSize: '.68rem', fontWeight: 700, color: 'var(--selesai)', textTransform: 'uppercase', letterSpacing: '.4px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                   <UserCheck size={11} /> aklamasi
                 </span>
               )}
@@ -410,8 +419,12 @@ export default function PanelPetugas() {
               <Minus size={14} />
             </button>
             <span className="hitung">{k.suara}</span>
-            <button className="btn-tally" onClick={() => tally(k, 1)}
-              disabled={!aktif} title="Tambah satu suara">
+            <button
+              className={`btn-tally ${jabatan === 'diaken' ? 'tally-diaken' : 'tally-penatua'}`}
+              onClick={() => tally(k, 1)}
+              disabled={!aktif}
+              title={`Tambah satu suara (${judul})`}
+            >
               <Plus size={13} style={{ display: 'inline', marginRight: 1 }} />1
             </button>
             <button className="btn btn-merah btn-kecil" onClick={() => hapusKandidat(k)}
@@ -454,7 +467,7 @@ export default function PanelPetugas() {
 
       <nav className="nav-panel">
         <span className="merek" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-          <Vote size={18} className="text-sky-400" />
+          <Vote size={18} className="teks-penatua" />
           <span>{data.kolom.nama} · Panel Petugas</span>
         </span>
         <a href="/" target="_blank" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -493,7 +506,7 @@ export default function PanelPetugas() {
               {(['penatua', 'diaken', 'selesai'] as Tahap[]).map((t, i) => (
                 <span key={t} style={{ display: 'flex', alignItems: 'center' }}>
                   {i > 0 && <span className="garis-step" />}
-                  <span className={`step ${t === tahap ? 'aktif' : posisi > i ? 'lewat' : ''}`}>
+                  <span className={`step ${t === tahap ? `aktif step-${t}` : posisi > i ? 'lewat' : ''}`}>
                     <span className="bulat" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                       {posisi > i ? <Check size={12} strokeWidth={3} /> : i + 1}
                     </span>
@@ -505,7 +518,7 @@ export default function PanelPetugas() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {tahap === 'penatua' && (
                 <>
-                  <button className="btn" onClick={() => ubahTahap('diaken')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <button className="btn btn-penatua" onClick={() => ubahTahap('diaken')} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <Save size={14} />
                     <span>Simpan Sesi Penatua</span>
                     <ArrowRight size={14} />
@@ -513,7 +526,7 @@ export default function PanelPetugas() {
                   <button className="btn btn-sekunder" onClick={aklamasi} disabled={sibuk}
                     title="Diaken ditetapkan dari peringkat 2 suara penatua, tanpa voting diaken"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <UserCheck size={14} className="text-amber-400" />
+                    <UserCheck size={14} className="teks-diaken" />
                     <span>Aklamasi Diaken (Peringkat 2)</span>
                   </button>
                 </>
@@ -524,7 +537,7 @@ export default function PanelPetugas() {
                     <ArrowLeft size={14} />
                     <span>Buka Sesi Penatua</span>
                   </button>
-                  <button className="btn btn-hijau" onClick={selesaikanPemilihan} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <button className="btn btn-selesai" onClick={selesaikanPemilihan} disabled={sibuk} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                     <CheckCheck size={14} />
                     <span>Simpan &amp; Selesaikan Pemilihan</span>
                   </button>
@@ -541,7 +554,7 @@ export default function PanelPetugas() {
           <p style={{ marginTop: 12, fontSize: '.8rem', color: 'var(--redup)', display: 'flex', alignItems: 'center', gap: 6 }}>
             {tahap === 'selesai' ? (
               <>
-                <Check size={14} className="text-emerald-400" />
+                <Check size={14} className="teks-selesai" />
                 <span>Pemilihan kolom ini telah selesai dan seluruh suara tersimpan. Terima kasih!</span>
               </>
             ) : (
@@ -565,7 +578,7 @@ export default function PanelPetugas() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Users size={18} className="text-sky-400" />
+              <Users size={18} className="teks-penatua" />
               <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
                 Pengaturan Jumlah Pemilih Terdaftar (DPT)
               </h2>
@@ -728,7 +741,7 @@ export default function PanelPetugas() {
                   {dpt > 0 && ` (${persenDiaken.toFixed(1)}%)`}
                 </span>
                 <span>
-                  Total suara masuk: <strong>{totalPenatua + totalDiaken}</strong> suara
+                  Akumulasi suara (P+D): <strong>{totalPenatua + totalDiaken}</strong> suara
                 </span>
               </div>
 
@@ -747,7 +760,7 @@ export default function PanelPetugas() {
                 >
                   <AlertTriangle size={13} style={{ flexShrink: 0 }} />
                   <span>
-                    Perhatian: Suara masuk ({suaraTahapAktif}) melebihi DPT ({dpt}). Periksa kemungkinan kesalahan tally.
+                    Perhatian: Perolehan suara {tahap === 'diaken' ? 'Diaken' : 'Penatua'} ({suaraTahapAktif}) melebihi DPT ({dpt}). Periksa kemungkinan kesalahan tally.
                   </span>
                 </div>
               )}
@@ -765,7 +778,7 @@ export default function PanelPetugas() {
         <div className="modal-overlay" onClick={() => setModalKonfirmasi(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-judul" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {modalKonfirmasi.bahaya ? <AlertTriangle size={18} className="text-rose-400" /> : <HelpCircle size={18} className="text-sky-400" />}
+              {modalKonfirmasi.bahaya ? <AlertTriangle size={18} className="teks-merah" /> : <HelpCircle size={18} className="teks-penatua" />}
               <span>{modalKonfirmasi.judul}</span>
             </div>
             <div className="modal-pesan">{modalKonfirmasi.pesan}</div>

@@ -64,11 +64,12 @@ export default function FormLogin() {
     }
   }
 
-  const gayaTab = (aktif: boolean): React.CSSProperties => ({
-    flex: 1, padding: '10px 0', minHeight: 44, borderRadius: 10, border: 'none', cursor: 'pointer',
+  const gayaTab = (aktif: boolean, jenis: 'petugas' | 'admin'): React.CSSProperties => ({
+    flex: 1, padding: '10px 0', minHeight: 44, borderRadius: 10, cursor: 'pointer',
     fontWeight: 600, fontSize: '.9rem',
-    background: aktif ? 'var(--biru-tua)' : 'transparent',
+    background: aktif ? (jenis === 'petugas' ? 'var(--penatua-tua)' : 'var(--panel-2)') : 'transparent',
     color: aktif ? '#fff' : 'var(--redup)',
+    border: aktif && jenis === 'admin' ? '1px solid var(--border)' : '1px solid transparent',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     transition: 'all .2s ease',
   });
@@ -77,10 +78,12 @@ export default function FormLogin() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <form className="panel" style={{ width: '100%', maxWidth: 400, padding: 32 }} onSubmit={masuk}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 20 }}>
-          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(56, 189, 248, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, color: 'var(--biru)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'var(--penatua-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, color: 'var(--penatua)' }}>
             <Vote size={26} />
           </div>
-          <h1 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 700 }}>Login Petugas</h1>
+          <h1 style={{ fontSize: '1.25rem', textAlign: 'center', fontWeight: 700 }}>
+            {mode === 'admin' ? 'Login Panitia Admin' : 'Login Petugas Kolom'}
+          </h1>
           <p style={{ textAlign: 'center', color: 'var(--redup)', fontSize: '.85rem', marginTop: 4 }}>
             Pemilihan Penatua &amp; Diaken
           </p>
@@ -91,7 +94,7 @@ export default function FormLogin() {
             type="button"
             role="tab"
             aria-selected={mode === 'petugas'}
-            style={gayaTab(mode === 'petugas')}
+            style={gayaTab(mode === 'petugas', 'petugas')}
             onClick={() => setMode('petugas')}
           >
             <Users size={15} />
@@ -101,7 +104,7 @@ export default function FormLogin() {
             type="button"
             role="tab"
             aria-selected={mode === 'admin'}
-            style={gayaTab(mode === 'admin')}
+            style={gayaTab(mode === 'admin', 'admin')}
             onClick={() => setMode('admin')}
           >
             <Shield size={15} />
@@ -114,7 +117,7 @@ export default function FormLogin() {
         {mode === 'petugas' ? (
           <>
             <label htmlFor="kolom" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <Users size={14} className="text-sky-400" />
+              <Users size={14} className="teks-penatua" />
               <span>Kolom / Kelompok</span>
             </label>
             <select id="kolom" className="input" value={kolomId} onChange={(e) => setKolomId(Number(e.target.value))} style={{ marginBottom: 16 }}>
@@ -127,7 +130,7 @@ export default function FormLogin() {
               )}
             </select>
             <label htmlFor="kode" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <KeyRound size={14} className="text-sky-400" />
+              <KeyRound size={14} className="teks-penatua" />
               <span>Kode Akses Kolom</span>
             </label>
             <input id="kode" type="password" className="input" value={kode} onChange={(e) => setKode(e.target.value)}
@@ -136,7 +139,7 @@ export default function FormLogin() {
         ) : (
           <>
             <label htmlFor="password" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <Lock size={14} className="text-sky-400" />
+              <Lock size={14} className="teks-penatua" />
               <span>Password Admin</span>
             </label>
             <input id="password" type="password" className="input" value={password} onChange={(e) => setPassword(e.target.value)}

@@ -8,15 +8,41 @@
   --teks: #f8fafc;
   --redup: #94a3b8;
   --samar: #8fa2b8;
+
+  /* Warna Pokok */
   --biru: #38bdf8;
   --biru-tua: #2563eb;
   --amber: #fbbf24;
-  --amber-tua: #d97706;
+  --amber-tua: #b45309; /* Memenuhi WCAG AA >= 4.5:1 terhadap teks putih */
   --hijau: #34d399;
   --merah: #f87171;
   --latar: var(--bg);
   --aksen: var(--biru);
+
+  /* Pembeda Jabatan Pelayanan & Status Sesuai Peruntukan */
+  --penatua: #38bdf8;
+  --penatua-tua: #2563eb;
+  --penatua-bg: rgba(56, 189, 248, 0.12);
+  --penatua-border: rgba(56, 189, 248, 0.35);
+
+  --diaken: #fbbf24;
+  --diaken-tua: #b45309;
+  --diaken-bg: rgba(251, 191, 36, 0.12);
+  --diaken-border: rgba(251, 191, 36, 0.35);
+
+  --selesai: #34d399;
+  --selesai-tua: #059669;
+  --selesai-bg: rgba(52, 211, 153, 0.12);
+  --selesai-border: rgba(52, 211, 153, 0.35);
 }
+
+/* Utilitas Pewarnaan Teks & Ikon Sesuai Peruntukan */
+.teks-penatua, .text-sky-400 { color: var(--penatua) !important; }
+.teks-diaken, .text-amber-400 { color: var(--diaken) !important; }
+.teks-selesai, .text-emerald-400 { color: var(--selesai) !important; }
+.teks-merah, .teks-bahaya, .text-rose-400 { color: var(--merah) !important; }
+.teks-redup { color: var(--redup) !important; }
+.teks-samar { color: var(--samar) !important; }
 
 html, body { min-height: 100vh; }
 
@@ -54,8 +80,12 @@ select:focus-visible,
 .btn:disabled { opacity: .45; cursor: not-allowed; }
 .btn-sekunder { background: var(--panel-2); color: var(--teks); border: 1px solid var(--border); }
 .btn-sekunder:hover { background: #32415a; }
-.btn-hijau { background: #059669; }
-.btn-hijau:hover { background: #047857; }
+.btn-penatua { background: var(--penatua-tua); }
+.btn-penatua:hover { background: #1d4ed8; }
+.btn-diaken { background: var(--diaken-tua); }
+.btn-diaken:hover { background: #92400e; }
+.btn-hijau, .btn-selesai { background: var(--selesai-tua); }
+.btn-hijau:hover, .btn-selesai:hover { background: #047857; }
 .btn-merah { background: #dc2626; }
 .btn-merah:hover { background: #b91c1c; }
 .btn-kecil { padding: 6px 12px; font-size: .8rem; border-radius: 8px; min-height: 44px; min-width: 44px; }
@@ -178,9 +208,14 @@ label { display: block; font-size: .82rem; font-weight: 600; color: var(--redup)
   border: 2px solid var(--border);
 }
 .step.aktif .bulat { background: var(--biru-tua); border-color: var(--biru); color: #fff; }
+.step.aktif.step-penatua .bulat { background: var(--penatua-tua); border-color: var(--penatua); color: #fff; }
+.step.aktif.step-diaken .bulat { background: var(--diaken-tua); border-color: var(--diaken); color: #fff; }
+.step.aktif.step-selesai .bulat { background: var(--selesai-tua); border-color: var(--selesai); color: #d1fae5; }
 .step.lewat .bulat { background: #065f46; border-color: var(--hijau); color: #d1fae5; }
 .step .ket-step { font-size: .82rem; font-weight: 600; color: var(--samar); }
 .step.aktif .ket-step { color: var(--teks); }
+.step.aktif.step-penatua .ket-step { color: var(--penatua); font-weight: 700; }
+.step.aktif.step-diaken .ket-step { color: var(--diaken); font-weight: 700; }
 .step.lewat .ket-step { color: var(--hijau); }
 .garis-step { flex: 0 0 34px; height: 2px; background: var(--border); margin: 0 10px; }
 
@@ -322,7 +357,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
   line-height: 1;
 }
 
-/* Sorot baris hero saat ada suara baru masuk */
+/* Sorot baris hero saat perolehan suara bertambah */
 .baris-hero { border-radius: 12px; transition: background .3s; }
 .baris-hero.naik { animation: sorot-naik 1.3s ease; }
 .baris-hero.naik .hero-angka { animation: denyut-angka .5s ease; color: var(--hijau); }
@@ -813,7 +848,10 @@ table.tabel { width: 100%; border-collapse: collapse; }
   display: flex; align-items: center; gap: 12px;
   padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px;
   margin-bottom: 10px; background: var(--bg);
+  transition: border-color .15s ease;
 }
+.baris-tally.penatua:hover { border-color: var(--penatua-border); }
+.baris-tally.diaken:hover { border-color: var(--diaken-border); }
 .baris-tally .nama-tally { flex: 1; min-width: 0; font-weight: 600; font-size: .95rem; }
 .baris-tally .hitung {
   font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -822,16 +860,49 @@ table.tabel { width: 100%; border-collapse: collapse; }
 .btn-tally {
   width: 56px; height: 48px; border-radius: 12px; border: none; cursor: pointer;
   font-size: 1.3rem; font-weight: 800; color: #fff;
-  background: var(--biru-tua); transition: background .1s, transform .05s;
+  background: var(--penatua-tua); transition: background .1s, transform .05s;
 }
 .btn-tally:hover { background: #1d4ed8; }
 .btn-tally:active { transform: scale(.94); }
 .btn-tally:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+.btn-tally.tally-penatua {
+  background: var(--penatua-tua);
+}
+.btn-tally.tally-penatua:hover {
+  background: #1d4ed8;
+}
+.btn-tally.tally-diaken {
+  background: var(--diaken-tua);
+}
+.btn-tally.tally-diaken:hover {
+  background: #92400e;
+}
 .btn-tally-min {
   width: 44px; height: 44px; font-size: 1.05rem; border-radius: 10px;
   background: var(--panel-2); color: var(--redup); border: 1px solid var(--border);
 }
 .btn-tally-min:hover { background: #32415a; color: var(--teks); }
+
+/* Tata letak grid dua kolom untuk jabatan Penatua & Diaken */
+.grid-jabatan {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (max-width: 768px) {
+  .grid-jabatan {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Utilitas visibilitas responsif */
+@media (max-width: 640px) {
+  .hidden.sm\:inline, .sm\:inline { display: none !important; }
+}
+@media (min-width: 641px) {
+  .sm\:hidden { display: none !important; }
+}
 
 /* Penyesuaian tata letak layar ponsel */
 @media (max-width: 640px) {
