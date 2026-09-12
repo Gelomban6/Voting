@@ -14,6 +14,8 @@ export interface KolomDoc {
   sesiToken?: string | null;
   // Kapan terakhir petugas kolom ini memanggil API (heartbeat)
   petugasAktifPada?: Date | null;
+  // Jumlah pemilih terdaftar (DPT) kolom
+  jumlahPemilih?: number;
 }
 
 export interface KandidatDoc {
@@ -66,6 +68,7 @@ function getInMemoryStore(): InMemoryStore {
         tahap: 'penatua',
         sesiToken: null,
         petugasAktifPada: null,
+        jumlahPemilih: 0,
       });
     }
     global._votingInMemoryStore = {
@@ -92,6 +95,7 @@ const inMemoryKolomCollection = {
             tahap: op.updateOne.update?.$setOnInsert?.tahap ?? 'penatua',
             sesiToken: null,
             petugasAktifPada: null,
+            jumlahPemilih: 0,
           });
         }
       }

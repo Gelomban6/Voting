@@ -38,6 +38,10 @@ interface Kolom {
   id: number;
   nama: string;
   tahap: Tahap;
+  jumlahPemilih?: number;
+  pemilihMemilih?: number;
+  suaraPenatua?: number;
+  suaraDiaken?: number;
   petugasAktif: boolean;
   penatua: Kandidat[];
   diaken: Kandidat[];
@@ -46,6 +50,9 @@ interface Kolom {
 interface DataQC {
   kolom: Kolom[];
   totalSuara: number;
+  totalDpt?: number;
+  totalPemilihMemilih?: number;
+  persenPartisipasi?: string;
   kolomSelesai: number;
   waktu: string;
 }
@@ -159,6 +166,12 @@ function hitungTrendKolom(
       } else if (deltaSuara > 0) {
         arah = 'naik';
         keterangan = `Suara bertambah +${deltaSuara} suara`;
+      } else if (deltaSuara < 0) {
+        arah = 'turun';
+        keterangan = `Suara berkurang ${deltaSuara} suara`;
+      } else {
+        arah = 'tetap';
+        keterangan = 'Stabil (suara tetap)';
       }
 
       riwayatRef.current.set(kandidat.id, { suara: kandidat.suara, lead: currentLead });
@@ -193,7 +206,6 @@ export default function HalamanPengamatKolom({
 
   const riwayatRef = useRef<Map<string, { suara: number; lead: number }>>(new Map());
 
-  // Ambil data real-time
   async function muatData() {
     try {
       const res = await fetch('/api/quickcount', { cache: 'no-store' });
@@ -286,10 +298,14 @@ export default function HalamanPengamatKolom({
     );
   }
 
-  const totalSuara = [...kolomAktif.penatua, ...kolomAktif.diaken].reduce(
-    (acc, c) => acc + c.suara,
-    0
-  );
+  const suaraPenatua = kolomAktif.penatua.reduce((acc, c) => acc + c.suara, 0);
+  const suaraDiaken = kolomAktif.diaken.reduce((acc, c) => acc + c.suara, 0);
+  const totalSuara = suaraPenatua + suaraDiaken;
+  const dptKolom = kolomAktif.jumlahPemilih ?? 0;
+  const pemilihMemilih =
+    kolomAktif.pemilihMemilih ??
+    (kolomAktif.tahap === 'penatua' ? suaraPenatua : Math.max(suaraPenatua, suaraDiaken));
+  const persenDpt = dptKolom > 0 ? ((pemilihMemilih / dptKolom) * 100).toFixed(1) : '0';
 
   const maksPenatua = Math.max(...kolomAktif.penatua.map((c) => c.suara), 1);
   const maksDiaken = Math.max(...kolomAktif.diaken.map((c) => c.suara), 1);
@@ -408,7 +424,6 @@ export default function HalamanPengamatKolom({
         </div>
       </header>
 
-      {/* Main Container */}
       <main style={{ maxWidth: 1100, margin: '0 auto', padding: '14px 12px 24px' }}>
         {/* Status Card & Live Indicator */}
         <div
@@ -557,11 +572,25 @@ export default function HalamanPengamatKolom({
               </div>
               <div>
                 <div style={{ fontSize: '.68rem', color: 'var(--samar)', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>
-                  Total Suara Terdata
+                  {dptKolom > 0 ? 'Pemilih Memilih Berdasarkan DPT' : 'Total Suara Terdata'}
                 </div>
-                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <Odometer nilai={totalSuara} />
-                  <span style={{ fontSize: '.82rem', fontWeight: 500, color: 'var(--redup)' }}>suara</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#fff', lineHeight: 1.2, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                  {dptKolom > 0 ? (
+                    <>
+                      <Odometer nilai={pemilihMemilih} />
+                      <span style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--redup)' }}>
+                        dari {dptKolom.toLocaleString('id-ID')} DPT ({persenDpt}%)
+                      </span>
+                      <span style={{ fontSize: '.74rem', color: 'var(--samar)', width: '100%', marginTop: 2 }}>
+                        {totalSuara} akumulasi suara (Penatua: {suaraPenatua}, Diaken: {suaraDiaken})
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Odometer nilai={totalSuara} />
+                      <span style={{ fontSize: '.82rem', fontWeight: 500, color: 'var(--redup)' }}>suara</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -578,7 +607,6 @@ export default function HalamanPengamatKolom({
 
         {/* Section Grid: Penatua & Diaken */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {/* Penatua */}
           <div className="panel" style={{ borderTop: '3px solid var(--penatua)', padding: '14px 14px' }}>
             <div
               style={{
@@ -705,10 +733,11 @@ export default function HalamanPengamatKolom({
                               <span
                                 className={`trend-indicator trend-${trend.arah}`}
                                 title={trend.keterangan}
+                                aria-label={trend.keterangan}
                               >
-                                {trend.arah === 'naik' && <TrendingUp size={11} strokeWidth={2.5} />}
-                                {trend.arah === 'turun' && <TrendingDown size={11} strokeWidth={2.5} />}
-                                {trend.arah === 'tetap' && <Minus size={10} />}
+                                {trend.arah === 'naik' && <TrendingUp size={11} strokeWidth={2.5} className="trend-ikon" />}
+                                {trend.arah === 'turun' && <TrendingDown size={11} strokeWidth={2.5} className="trend-ikon" />}
+                                {trend.arah === 'tetap' && <Minus size={11} strokeWidth={2.5} className="trend-ikon" />}
                                 <span className="trend-val">
                                   {trend.arah === 'naik' && `+${deltaNilai > 0 ? deltaNilai : 1}`}
                                   {trend.arah === 'turun' && `-${deltaNilai > 0 ? deltaNilai : 1}`}
@@ -740,7 +769,6 @@ export default function HalamanPengamatKolom({
             )}
           </div>
 
-          {/* Diaken */}
           <div className="panel" style={{ borderTop: '3px solid var(--diaken)', padding: '14px 14px' }}>
             <div
               style={{
@@ -867,10 +895,11 @@ export default function HalamanPengamatKolom({
                               <span
                                 className={`trend-indicator trend-${trend.arah}`}
                                 title={trend.keterangan}
+                                aria-label={trend.keterangan}
                               >
-                                {trend.arah === 'naik' && <TrendingUp size={11} strokeWidth={2.5} />}
-                                {trend.arah === 'turun' && <TrendingDown size={11} strokeWidth={2.5} />}
-                                {trend.arah === 'tetap' && <Minus size={10} />}
+                                {trend.arah === 'naik' && <TrendingUp size={11} strokeWidth={2.5} className="trend-ikon" />}
+                                {trend.arah === 'turun' && <TrendingDown size={11} strokeWidth={2.5} className="trend-ikon" />}
+                                {trend.arah === 'tetap' && <Minus size={11} strokeWidth={2.5} className="trend-ikon" />}
                                 <span className="trend-val">
                                   {trend.arah === 'naik' && `+${deltaNilai > 0 ? deltaNilai : 1}`}
                                   {trend.arah === 'turun' && `-${deltaNilai > 0 ? deltaNilai : 1}`}

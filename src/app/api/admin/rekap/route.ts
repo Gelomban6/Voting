@@ -19,7 +19,10 @@ export async function GET() {
   const dataKolom = kolomRows.map((k) => {
     const penatua = kandidatRows.filter((c) => c.kolomId === k._id && c.jabatan === 'penatua');
     const diaken = kandidatRows.filter((c) => c.kolomId === k._id && c.jabatan === 'diaken');
-    const totalSuara = [...penatua, ...diaken].reduce((a, b) => a + b.suara, 0);
+    const suaraPenatua = penatua.reduce((a, b) => a + b.suara, 0);
+    const suaraDiaken = diaken.reduce((a, b) => a + b.suara, 0);
+    const totalSuara = suaraPenatua + suaraDiaken;
+    const pemilihMemilih = k.tahap === 'penatua' ? suaraPenatua : Math.max(suaraPenatua, suaraDiaken);
 
     // Penatua terpilih
     const maksPenatua = Math.max(0, ...penatua.map((c) => c.suara));
@@ -40,6 +43,10 @@ export async function GET() {
       nama: k.nama,
       kode: k.kode,
       tahap: k.tahap,
+      jumlahPemilih: k.jumlahPemilih ?? 0,
+      pemilihMemilih,
+      suaraPenatua,
+      suaraDiaken,
       totalSuara,
       penatuaTerpilih,
       penatuaSuara: teratasPenatua.length === 1 ? teratasPenatua[0].suara : 0,
@@ -52,6 +59,8 @@ export async function GET() {
 
   return NextResponse.json({
     waktuCetak: new Date().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }),
+    totalDptGereja: kolomRows.reduce((a, b) => a + (b.jumlahPemilih ?? 0), 0),
+    totalPemilihGereja: dataKolom.reduce((a, b) => a + b.pemilihMemilih, 0),
     totalSuaraGereja: kandidatRows.reduce((a, b) => a + b.suara, 0),
     kolomSelesai: kolomRows.filter((k) => k.tahap === 'selesai').length,
     totalKolom: kolomRows.length,

@@ -25,8 +25,27 @@ const JARAK_NAV = 14;
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 interface Kandidat { id: string; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
-interface Kolom { id: number; nama: string; tahap: Tahap; petugasAktif: boolean; penatua: Kandidat[]; diaken: Kandidat[] }
-interface DataQC { kolom: Kolom[]; totalSuara: number; kolomSelesai: number; waktu: string }
+interface Kolom {
+  id: number;
+  nama: string;
+  tahap: Tahap;
+  jumlahPemilih?: number;
+  pemilihMemilih?: number;
+  suaraPenatua?: number;
+  suaraDiaken?: number;
+  petugasAktif: boolean;
+  penatua: Kandidat[];
+  diaken: Kandidat[];
+}
+interface DataQC {
+  kolom: Kolom[];
+  totalSuara: number;
+  totalDpt?: number;
+  totalPemilihMemilih?: number;
+  persenPartisipasi?: string;
+  kolomSelesai: number;
+  waktu: string;
+}
 
 export interface TrendKandidat {
   arah: 'naik' | 'turun' | 'tetap';
@@ -255,9 +274,12 @@ function hitungTrendSemuaKolom(
         } else if (deltaSuara > 0) {
           arah = 'naik';
           keterangan = `Suara bertambah +${deltaSuara} suara`;
+        } else if (deltaSuara < 0) {
+          arah = 'turun';
+          keterangan = `Suara berkurang ${deltaSuara} suara`;
         } else {
           arah = 'tetap';
-          keterangan = 'Stabil (tidak ada perubahan selisih suara)';
+          keterangan = 'Stabil (suara tetap)';
         }
 
         riwayatRef.current.set(kandidat.id, { suara: kandidat.suara, lead: currentLead });
@@ -315,7 +337,7 @@ function BarisHero({ k, warna, maks, unggul, trend }: {
               >
                 {trend.arah === 'naik' && <TrendingUp size={11} strokeWidth={2.5} className="trend-ikon" />}
                 {trend.arah === 'turun' && <TrendingDown size={11} strokeWidth={2.5} className="trend-ikon" />}
-                {trend.arah === 'tetap' && <Minus size={10} className="trend-ikon" />}
+                {trend.arah === 'tetap' && <Minus size={11} strokeWidth={2.5} className="trend-ikon" />}
                 <span className="trend-val">
                   {trend.arah === 'naik' && `+${nilaiDelta > 0 ? nilaiDelta : 1}`}
                   {trend.arah === 'turun' && `-${nilaiDelta > 0 ? nilaiDelta : 1}`}
@@ -606,8 +628,22 @@ function HalamanQuickCountContent() {
             </div>
           </div>
           <div className="stat">
+            <div className="angka">
+              {data ? (
+                <Odometer nilai={data.totalPemilihMemilih !== undefined ? data.totalPemilihMemilih : data.totalSuara} />
+              ) : (
+                0
+              )}
+            </div>
+            <div className="ket">
+              {data && data.totalDpt && data.totalDpt > 0
+                ? `Pemilih (${data.persenPartisipasi ?? '0'}% DPT)`
+                : 'Pemilih Memilih'}
+            </div>
+          </div>
+          <div className="stat">
             <div className="angka">{data ? <Odometer nilai={data.totalSuara} /> : 0}</div>
-            <div className="ket">Total Suara</div>
+            <div className="ket">Total Suara Masuk</div>
           </div>
         </div>
       </header>
@@ -666,7 +702,17 @@ function HalamanQuickCountContent() {
                       </span>
                     )}
                     <span className="hero-total">
-                      <Odometer nilai={totalKolom(kolomAktif)} /> suara masuk
+                      {kolomAktif.jumlahPemilih && kolomAktif.jumlahPemilih > 0 ? (
+                        <>
+                          <strong>{kolomAktif.pemilihMemilih ?? Math.max(kolomAktif.penatua.reduce((a, c) => a + c.suara, 0), kolomAktif.diaken.reduce((a, c) => a + c.suara, 0))}</strong> dari <strong>{kolomAktif.jumlahPemilih}</strong> DPT telah memilih ({(((kolomAktif.pemilihMemilih ?? Math.max(kolomAktif.penatua.reduce((a, c) => a + c.suara, 0), kolomAktif.diaken.reduce((a, c) => a + c.suara, 0))) / kolomAktif.jumlahPemilih) * 100).toFixed(1)}%)
+                          <span style={{ opacity: 0.6, margin: '0 6px' }}>·</span>
+                          <Odometer nilai={totalKolom(kolomAktif)} /> akumulasi suara
+                        </>
+                      ) : (
+                        <>
+                          <Odometer nilai={totalKolom(kolomAktif)} /> suara masuk
+                        </>
+                      )}
                       {kolomAktif.tahap === 'selesai' && ' · Berita acara telah disahkan'}
                     </span>
                   </div>

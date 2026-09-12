@@ -28,6 +28,7 @@ export async function GET() {
       nama: k.nama,
       kode: k.kode,
       tahap: k.tahap,
+      jumlahPemilih: k.jumlahPemilih ?? 0,
       jumlahKandidat: perKolom.get(k._id)?.jumlahKandidat ?? 0,
       totalSuara: perKolom.get(k._id)?.totalSuara ?? 0,
     })),
@@ -59,6 +60,7 @@ export async function PUT(req: Request) {
             nama: `Kolom ${i + 1}`,
             kode: `kolom${i + 1}`,
             tahap: 'penatua' as Tahap,
+            jumlahPemilih: 0,
           },
         },
         upsert: true,
@@ -75,7 +77,7 @@ export async function PUT(req: Request) {
   return NextResponse.json({ ok: true, jumlah });
 }
 
-// PATCH: ubah kolom { id, nama?, kode?, tahap? }
+// PATCH: ubah kolom { id, nama?, kode?, tahap?, jumlahPemilih? }
 export async function PATCH(req: Request) {
   if (!(await adminOnly())) return NextResponse.json({ error: 'Tidak diizinkan' }, { status: 401 });
 
@@ -83,7 +85,7 @@ export async function PATCH(req: Request) {
   const id = Number(body?.id);
   if (!id) return NextResponse.json({ error: 'ID tidak valid' }, { status: 400 });
 
-  const set: Partial<{ nama: string; kode: string; tahap: Tahap }> = {};
+  const set: Partial<{ nama: string; kode: string; tahap: Tahap; jumlahPemilih: number }> = {};
   if (typeof body.nama === 'string' && body.nama.trim()) {
     const namaTrim = body.nama.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
     if (namaTrim.length > 50) return NextResponse.json({ error: 'Nama kolom maksimal 50 karakter' }, { status: 400 });
@@ -95,6 +97,14 @@ export async function PATCH(req: Request) {
     set.kode = kodeTrim;
   }
   if (['penatua', 'diaken', 'selesai'].includes(body.tahap as Tahap)) set.tahap = body.tahap;
+  if (
+    typeof body.jumlahPemilih === 'number' &&
+    Number.isInteger(body.jumlahPemilih) &&
+    body.jumlahPemilih >= 0 &&
+    body.jumlahPemilih <= 50000
+  ) {
+    set.jumlahPemilih = body.jumlahPemilih;
+  }
   if (Object.keys(set).length === 0) {
     return NextResponse.json({ error: 'Tidak ada perubahan' }, { status: 400 });
   }

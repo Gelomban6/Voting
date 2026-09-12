@@ -19,13 +19,14 @@ import {
   Camera,
   AlertTriangle,
   HelpCircle,
+  Users,
 } from 'lucide-react';
 
 type Tahap = 'penatua' | 'diaken' | 'selesai';
 type Jabatan = 'penatua' | 'diaken';
 interface Kandidat { id: string; jabatan: Jabatan; nama: string; suara: number; aklamasi?: boolean; foto: string | null }
 interface DataPetugas {
-  kolom: { id: number; nama: string; tahap: Tahap };
+  kolom: { id: number; nama: string; tahap: Tahap; jumlahPemilih?: number };
   penatua: Kandidat[];
   diaken: Kandidat[];
 }
@@ -39,6 +40,9 @@ export default function PanelPetugas() {
   const [data, setData] = useState<DataPetugas | null>(null);
   const [pesan, setPesan] = useState<{ jenis: 'sukses' | 'gagal'; teks: string } | null>(null);
   const [namaBaru, setNamaBaru] = useState<Record<Jabatan, string>>({ penatua: '', diaken: '' });
+  const [jumlahPemilihInput, setJumlahPemilihInput] = useState('');
+  const [simpanDptSibuk, setSimpanDptSibuk] = useState(false);
+  const sedangEditDpt = useRef(false);
   const [sibuk, setSibuk] = useState(false);
   const [modalKonfirmasi, setModalKonfirmasi] = useState<{
     judul: string;
@@ -54,7 +58,16 @@ export default function PanelPetugas() {
     const res = await fetch('/api/petugas', { cache: 'no-store' });
     if (res.status === 401) { router.push('/login'); return; }
     const json = await res.json();
-    if (!json.error) setData(json);
+    if (!json.error) {
+      setData(json);
+      if (!sedangEditDpt.current) {
+        setJumlahPemilihInput(
+          json.kolom?.jumlahPemilih && json.kolom.jumlahPemilih > 0
+            ? String(json.kolom.jumlahPemilih)
+            : ''
+        );
+      }
+    }
   }, [router]);
 
   // Muat awal dan polling berkala untuk sinkronisasi data antar perangkat
@@ -129,6 +142,38 @@ export default function PanelPetugas() {
     } catch {
       tampilkan('gagal', 'Tidak dapat terhubung ke server');
       muat();
+    }
+  }
+
+  async function simpanJumlahPemilih(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    const bersih = jumlahPemilihInput.trim();
+    const angka = bersih === '' ? 0 : Number(bersih);
+
+    if (!Number.isInteger(angka) || angka < 0 || angka > 50000) {
+      tampilkan('gagal', 'Jumlah pemilih harus berupa angka bulat antara 0 dan 50.000');
+      return;
+    }
+
+    setSimpanDptSibuk(true);
+    try {
+      const res = await fetch('/api/petugas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jumlahPemilih: angka }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        tampilkan('gagal', json.error ?? 'Gagal menyimpan jumlah pemilih');
+      } else {
+        sedangEditDpt.current = false;
+        setData((d) => (d ? { ...d, kolom: { ...d.kolom, jumlahPemilih: angka } } : d));
+        tampilkan('sukses', 'Pengaturan jumlah pemilih terdaftar (DPT) berhasil disimpan.');
+      }
+    } catch {
+      tampilkan('gagal', 'Tidak dapat terhubung ke server');
+    } finally {
+      setSimpanDptSibuk(false);
     }
   }
 
@@ -294,6 +339,15 @@ export default function PanelPetugas() {
   const tahap = data.kolom.tahap;
   const urutan: Tahap[] = ['penatua', 'diaken', 'selesai'];
   const posisi = urutan.indexOf(tahap);
+
+  const dpt = data.kolom.jumlahPemilih ?? 0;
+  const totalPenatua = data.penatua.reduce((a, k) => a + k.suara, 0);
+  const totalDiaken = data.diaken.reduce((a, k) => a + k.suara, 0);
+  const suaraTahapAktif = tahap === 'diaken' ? totalDiaken : totalPenatua;
+  const persenPartisipasi = dpt > 0 ? (suaraTahapAktif / dpt) * 100 : 0;
+  const persenPenatua = dpt > 0 ? (totalPenatua / dpt) * 100 : 0;
+  const persenDiaken = dpt > 0 ? (totalDiaken / dpt) * 100 : 0;
+  const overDpt = dpt > 0 && suaraTahapAktif > dpt;
 
   function seksiTally(jabatan: Jabatan, judul: string) {
     const daftar = jabatan === 'penatua' ? data!.penatua : data!.diaken;
@@ -496,6 +550,209 @@ export default function PanelPetugas() {
               </span>
             )}
           </p>
+        </div>
+
+        {/* Panel Pengaturan Jumlah Pemilih & Statistik Partisipasi */}
+        <div className="panel" style={{ marginBottom: 20 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+              marginBottom: 14,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Users size={18} className="text-sky-400" />
+              <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
+                Pengaturan Jumlah Pemilih Terdaftar (DPT)
+              </h2>
+            </div>
+            {dpt > 0 ? (
+              <span
+                style={{
+                  fontSize: '.75rem',
+                  fontWeight: 600,
+                  padding: '3px 10px',
+                  borderRadius: 9999,
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  color: 'var(--biru)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                }}
+              >
+                DPT: {dpt.toLocaleString('id-ID')} pemilih
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: '.75rem',
+                  color: 'var(--samar)',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                }}
+              >
+                DPT belum diatur
+              </span>
+            )}
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: 20,
+              alignItems: 'start',
+            }}
+          >
+            {/* Formulir Pengaturan DPT */}
+            <div>
+              <form
+                onSubmit={simpanJumlahPemilih}
+                style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+              >
+                <label
+                  htmlFor="input-dpt-petugas"
+                  style={{ fontSize: '.82rem', color: 'var(--redup)', fontWeight: 600 }}
+                >
+                  Jumlah Pemilih Terdaftar (Kolom {data.kolom.id}):
+                </label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input
+                    id="input-dpt-petugas"
+                    type="number"
+                    min="0"
+                    max="50000"
+                    placeholder="Contoh: 150"
+                    className="input"
+                    value={jumlahPemilihInput}
+                    onFocus={() => {
+                      sedangEditDpt.current = true;
+                    }}
+                    onChange={(e) => {
+                      sedangEditDpt.current = true;
+                      setJumlahPemilihInput(e.target.value);
+                    }}
+                    style={{ maxWidth: 170, minHeight: 44, fontWeight: 700 }}
+                  />
+                  <button
+                    type="submit"
+                    className="btn"
+                    disabled={simpanDptSibuk}
+                    style={{ minHeight: 44, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <Save size={14} />
+                    <span>Simpan</span>
+                  </button>
+                </div>
+                <span style={{ fontSize: '.75rem', color: 'var(--samar)' }}>
+                  Gunakan angka DPT resmi jemaat sebagai acuan persentase kehadiran dan partisipasi suara.
+                </span>
+              </form>
+            </div>
+
+            {/* Statistik & Tingkat Partisipasi */}
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 12,
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 6,
+                }}
+              >
+                <span style={{ fontSize: '.82rem', fontWeight: 600, color: 'var(--redup)' }}>
+                  Total Pemilih Memilih: {suaraTahapAktif} dari {dpt > 0 ? `${dpt.toLocaleString('id-ID')} DPT` : 'DPT belum diatur'}
+                </span>
+                <span
+                  style={{
+                    fontSize: '.9rem',
+                    fontWeight: 800,
+                    color: overDpt ? 'var(--merah)' : 'var(--biru)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {dpt > 0 ? `${persenPartisipasi.toFixed(1)}% partisipasi` : '0%'}
+                </span>
+              </div>
+
+              {/* Progress Bar Partisipasi */}
+              <div
+                style={{
+                  height: 9,
+                  background: 'var(--panel-2)',
+                  borderRadius: 99,
+                  overflow: 'hidden',
+                  marginBottom: 8,
+                }}
+              >
+                <div
+                  style={{
+                    height: '100%',
+                    width: `${Math.min(100, persenPartisipasi)}%`,
+                    background: overDpt
+                      ? 'var(--merah)'
+                      : 'linear-gradient(90deg, var(--biru-tua), var(--biru))',
+                    borderRadius: 99,
+                    transition: 'width .4s ease',
+                  }}
+                />
+              </div>
+
+              {/* Rincian Suara vs DPT */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '.75rem',
+                  color: 'var(--samar)',
+                  flexWrap: 'wrap',
+                  gap: 6,
+                }}
+              >
+                <span>
+                  Penatua: <strong>{totalPenatua}</strong> pemilih
+                  {dpt > 0 && ` (${persenPenatua.toFixed(1)}%)`}
+                </span>
+                <span>
+                  Diaken: <strong>{totalDiaken}</strong> pemilih
+                  {dpt > 0 && ` (${persenDiaken.toFixed(1)}%)`}
+                </span>
+                <span>
+                  Total suara masuk: <strong>{totalPenatua + totalDiaken}</strong> suara
+                </span>
+              </div>
+
+              {overDpt && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    color: 'var(--merah)',
+                    fontSize: '.75rem',
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: '1px solid rgba(248, 113, 113, 0.2)',
+                  }}
+                >
+                  <AlertTriangle size={13} style={{ flexShrink: 0 }} />
+                  <span>
+                    Perhatian: Suara masuk ({suaraTahapAktif}) melebihi DPT ({dpt}). Periksa kemungkinan kesalahan tally.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>

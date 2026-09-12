@@ -30,12 +30,15 @@ interface Kolom {
   nama: string;
   kode: string;
   tahap: Tahap;
+  jumlahPemilih?: number;
   jumlahKandidat: number;
   totalSuara: number;
 }
 
 interface RekapDetail {
   waktuCetak: string;
+  totalDptGereja?: number;
+  totalPemilihGereja?: number;
   totalSuaraGereja: number;
   kolomSelesai: number;
   totalKolom: number;
@@ -44,6 +47,10 @@ interface RekapDetail {
     nama: string;
     kode: string;
     tahap: Tahap;
+    jumlahPemilih?: number;
+    pemilihMemilih?: number;
+    suaraPenatua?: number;
+    suaraDiaken?: number;
     totalSuara: number;
     penatuaTerpilih: string;
     penatuaSuara: number;
@@ -248,12 +255,14 @@ export default function PanelAdmin() {
       }
 
       let csv = '\uFEFF'; // UTF-8 BOM agar terbaca rapi di Microsoft Excel
-      csv += 'No,Nama Kolom,Tahap,Total Suara Kolom,Penatua Terpilih,Suara Penatua,Diaken Terpilih,Suara Diaken\r\n';
+      csv += 'No,Nama Kolom,Tahap,Jumlah Pemilih (DPT),Pemilih Memilih,Total Suara Masuk,Penatua Terpilih,Suara Penatua,Diaken Terpilih,Suara Diaken\r\n';
       json.data.forEach((k, idx) => {
         const row = [
           idx + 1,
           `"${k.nama.replace(/"/g, '""')}"`,
           `"${TAHAP_LABEL[k.tahap]}"`,
+          k.jumlahPemilih ?? 0,
+          k.pemilihMemilih ?? 0,
           k.totalSuara,
           `"${k.penatuaTerpilih.replace(/"/g, '""')}"`,
           k.penatuaSuara,
@@ -591,20 +600,25 @@ export default function PanelAdmin() {
             <div className="kop-surat">
               <h1>BERITA ACARA REKAPITULASI HASIL PEMILIHAN</h1>
               <h1>PENATUA &amp; DIAKEN PERIODE PELAYANAN</h1>
-              <p>Waktu Cetak: {rekapData.waktuCetak} · Total Suara Masuk: {rekapData.totalSuaraGereja.toLocaleString('id-ID')} suara</p>
+              <p>
+                Waktu Cetak: {rekapData.waktuCetak} · Pemilih Memilih: {(rekapData.totalPemilihGereja ?? 0).toLocaleString('id-ID')}
+                {rekapData.totalDptGereja && rekapData.totalDptGereja > 0 ? ` dari ${rekapData.totalDptGereja.toLocaleString('id-ID')} DPT (${(((rekapData.totalPemilihGereja ?? 0) / rekapData.totalDptGereja) * 100).toFixed(1)}%)` : ''} · Total Suara Masuk: {rekapData.totalSuaraGereja.toLocaleString('id-ID')} suara
+              </p>
             </div>
 
             <table className="tabel-cetak">
               <thead>
                 <tr>
-                  <th style={{ width: 40 }}>No</th>
+                  <th style={{ width: 35 }}>No</th>
                   <th>Kolom</th>
                   <th>Status</th>
+                  <th style={{ width: 50 }}>DPT</th>
+                  <th style={{ width: 65 }}>Pemilih Memilih</th>
                   <th>Penatua Terpilih</th>
-                  <th style={{ width: 65 }}>Suara</th>
+                  <th style={{ width: 55 }}>Suara</th>
                   <th>Diaken Terpilih</th>
-                  <th style={{ width: 65 }}>Suara</th>
-                  <th style={{ width: 75 }}>Total Suara</th>
+                  <th style={{ width: 55 }}>Suara</th>
+                  <th style={{ width: 65 }}>Total Suara</th>
                 </tr>
               </thead>
               <tbody>
@@ -613,6 +627,8 @@ export default function PanelAdmin() {
                     <td style={{ textAlign: 'center' }}>{i + 1}</td>
                     <td style={{ fontWeight: 600 }}>{k.nama}</td>
                     <td style={{ textAlign: 'center' }}>{k.tahap === 'selesai' ? 'Selesai' : 'Berlangsung'}</td>
+                    <td style={{ textAlign: 'center' }}>{k.jumlahPemilih || '-'}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 600 }}>{k.pemilihMemilih ?? '-'}</td>
                     <td>{k.penatuaTerpilih}</td>
                     <td style={{ textAlign: 'center', fontWeight: 600 }}>{k.penatuaSuara || '-'}</td>
                     <td>{k.diakenTerpilih}</td>
