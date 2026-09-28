@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { InfiniteSlider } from '@/components/motion-primitives/infinite-slider';
 import {
   ChevronLeft,
   ChevronRight,
@@ -438,11 +439,7 @@ function HalamanQuickCountContent() {
   const [jeda, setJeda] = useState(false);
   const [kunci, setKunci] = useState(false);
   const [filterSelesai, setFilterSelesai] = useState(false);
-  const [lebarWadah, setLebarWadah] = useState(0);
-  const [lebarKartu, setLebarKartu] = useState(LEBAR_NAV_BAWAAN);
-  const relNav = useRef<HTMLDivElement>(null);
   const sentuhX = useRef<number | null>(null);
-  const sentuhNav = useRef<{ x: number; t: number } | null>(null);
   const riwayatRef = useRef<Map<string, { suara: number; lead: number }>>(new Map());
 
   useEffect(() => {
@@ -484,21 +481,6 @@ function HalamanQuickCountContent() {
   const daftarTampil = filterSelesai && selesaiList.length > 0 ? selesaiList : (data?.kolom ?? []);
   const jumlah = daftarTampil.length;
 
-  // Ukur lebar wadah nav dan lebar kartu (berubah di layar sempit) untuk
-  // memusatkan kartu aktif. Diukur ulang saat data pertama tiba dan saat resize.
-  useLayoutEffect(() => {
-    function ukur() {
-      if (relNav.current) {
-        setLebarWadah(relNav.current.clientWidth);
-        const kartu = relNav.current.querySelector<HTMLElement>('.kartu-nav');
-        if (kartu) setLebarKartu(kartu.offsetWidth);
-      }
-    }
-    ukur();
-    window.addEventListener('resize', ukur);
-    return () => window.removeEventListener('resize', ukur);
-  }, [jumlah]);
-
   const geser = useCallback((arah: 1 | -1) => {
     if (!jumlah) return;
     setAktif((a) => (a + arah + jumlah) % jumlah);
@@ -515,7 +497,7 @@ function HalamanQuickCountContent() {
     setKunci(true);
   }, [geser]);
 
-  // Geser otomatis (berhenti saat kursor di area carousel atau saat terkunci)
+  // Geser otomatis (berhenti saat kursor di area hero carousel atau saat terkunci)
   useEffect(() => {
     if (jeda || kunci || jumlah === 0) return;
     const timer = setInterval(() => geser(1), GESER_OTOMATIS_MS);
@@ -524,11 +506,7 @@ function HalamanQuickCountContent() {
 
   const kolomAktif = daftarTampil[Math.min(aktif, Math.max(0, jumlah - 1))];
 
-  // Posisi track: kartu aktif selalu di tengah wadah (center mode)
-  const langkah = lebarKartu + JARAK_NAV;
-  const offset = lebarWadah / 2 - (aktif * langkah + lebarKartu / 2);
-
-  // Geser dengan usapan jari (mobile)
+  // Geser dengan usapan jari pada hero (mobile)
   function sentuhMulai(e: React.TouchEvent) {
     sentuhX.current = e.touches[0].clientX;
   }
@@ -537,29 +515,6 @@ function HalamanQuickCountContent() {
     const dx = e.changedTouches[0].clientX - sentuhX.current;
     sentuhX.current = null;
     if (Math.abs(dx) > 48) geserManual(dx < 0 ? 1 : -1);
-  }
-
-  // Usapan pada strip kartu kecil: mendukung flick (usapan cepat atau panjang)
-  // melompati beberapa kartu sekaligus sesuai jarak dan kecepatannya
-  function navMulai(e: React.TouchEvent) {
-    sentuhNav.current = { x: e.touches[0].clientX, t: Date.now() };
-  }
-  function navSelesai(e: React.TouchEvent) {
-    if (!sentuhNav.current || !jumlah) return;
-    const dx = e.changedTouches[0].clientX - sentuhNav.current.x;
-    const dt = Math.max(1, Date.now() - sentuhNav.current.t);
-    sentuhNav.current = null;
-    if (Math.abs(dx) < 40) return;
-
-    const kecepatan = Math.abs(dx) / dt; // px per milidetik
-    let lompat = Math.max(1, Math.round(Math.abs(dx) / langkah));
-    if (kecepatan > 0.9) lompat += 2;
-    else if (kecepatan > 0.5) lompat += 1;
-    lompat = Math.min(lompat, 6);
-
-    const arah = dx < 0 ? 1 : -1;
-    setAktif((a) => (((a + arah * lompat) % jumlah) + jumlah) % jumlah);
-    setKunci(true);
   }
 
   return (
@@ -602,7 +557,7 @@ function HalamanQuickCountContent() {
         </div>
       </header>
 
-      <main className="wadah" onMouseEnter={() => setJeda(true)} onMouseLeave={() => setJeda(false)}>
+      <main className="wadah">
         {!data || !kolomAktif ? (
           <p style={{ textAlign: 'center', color: 'var(--samar)' }}>Memuat data…</p>
         ) : (
@@ -633,7 +588,13 @@ function HalamanQuickCountContent() {
               </div>
             )}
 
-            <div className="hero-wrap" onTouchStart={sentuhMulai} onTouchEnd={sentuhSelesai}>
+            <div
+              className="hero-wrap"
+              onMouseEnter={() => setJeda(true)}
+              onMouseLeave={() => setJeda(false)}
+              onTouchStart={sentuhMulai}
+              onTouchEnd={sentuhSelesai}
+            >
               <button className="panah panah-kiri" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">
                 <ChevronLeft size={22} />
               </button>
@@ -694,13 +655,18 @@ function HalamanQuickCountContent() {
               </button>
             </div>
 
-            <div className="nav-wrap" ref={relNav} onTouchStart={navMulai} onTouchEnd={navSelesai}>
-              <div className="nav-track" style={{ transform: `translateX(${offset}px)` }}>
-                {daftarTampil.map((k, i) => (
-                  <KartuNav kolom={k} tengah={i === aktif} onClick={() => pilih(i)} key={k.id} />
-                ))}
-              </div>
-            </div>
+            <InfiniteSlider
+              className="nav-wrap"
+              trackClassName="nav-track"
+              gap={JARAK_NAV}
+              speed={35}
+              speedOnHover={0}
+              paused={kunci}
+            >
+              {daftarTampil.map((k, i) => (
+                <KartuNav kolom={k} tengah={i === aktif} onClick={() => pilih(i)} key={k.id} />
+              ))}
+            </InfiniteSlider>
 
             <div className="dots">
               <button className="panah-dots" onClick={() => geserManual(-1)} aria-label="Kolom sebelumnya">

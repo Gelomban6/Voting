@@ -741,11 +741,10 @@ table.tabel { width: 100%; border-collapse: collapse; }
   box-shadow: 0 0 0 4px rgba(52, 211, 153, .12);
 }
 
-/* Strip navigasi center-mode */
+/* Strip navigasi infinite slider */
 .nav-wrap { overflow: hidden; padding: 12px 0 6px; }
 .nav-track {
   display: flex; gap: 14px;
-  transition: transform .55s cubic-bezier(.33, .8, .3, 1);
   will-change: transform;
 }
 .kartu-nav {
