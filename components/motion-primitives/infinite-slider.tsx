@@ -16,6 +16,7 @@ export type InfiniteSliderProps = {
   trackClassName?: string;
   paused?: boolean;
   onHoverChange?: (isHovering: boolean) => void;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
 };
 
 export function InfiniteSlider({
@@ -29,6 +30,7 @@ export function InfiniteSlider({
   trackClassName,
   paused = false,
   onHoverChange,
+  onClick,
 }: InfiniteSliderProps) {
   const [isInteracting, setIsInteracting] = useState(false);
   const [ref, { width, height }] = useMeasure();
@@ -137,6 +139,7 @@ export function InfiniteSlider({
           willChange: 'transform',
         }}
         ref={ref}
+        onClick={onClick}
       >
         {React.Children.map(children, (child, idx) => {
           if (React.isValidElement(child)) {

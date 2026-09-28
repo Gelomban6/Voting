@@ -336,21 +336,6 @@ table.tabel { width: 100%; border-collapse: collapse; }
   100% { transform: scale(1); }
 }
 
-/* Tombol kendali putar otomatis dan pengunci carousel */
-.btn-putar {
-  width: 44px; height: 44px; border-radius: 50%;
-  background: var(--panel); border: 1px solid var(--border);
-  color: var(--teks);
-  font-size: 1.05rem; cursor: pointer; line-height: 1;
-  display: inline-flex; align-items: center; justify-content: center;
-  transition: border-color .15s, box-shadow .15s, transform .1s;
-}
-.btn-putar:hover { border-color: var(--samar); transform: scale(1.04); }
-.btn-putar.terkunci {
-  border-color: var(--biru);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-}
-
 /* Carousel kolom yang sudah selesai */
 .terpilih-carousel {
   position: relative;
@@ -746,6 +731,7 @@ table.tabel { width: 100%; border-collapse: collapse; }
 .nav-track {
   display: flex; gap: 14px;
   will-change: transform;
+  cursor: pointer;
 }
 .kartu-nav {
   flex: 0 0 216px; width: 216px;
@@ -867,7 +853,6 @@ table.tabel { width: 100%; border-collapse: collapse; }
 
   .dots { gap: 5px; margin-top: 8px; }
   .dot { width: 10px; height: 10px; }
-  .btn-putar { width: 44px; height: 44px; font-size: .9rem; }
 
   .wadah-sempit { padding: 16px 10px 50px; }
   .nav-panel { padding: 0 12px; gap: 10px; }

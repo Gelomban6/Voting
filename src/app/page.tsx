@@ -7,9 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  Lock,
-  Pause,
-  Play,
   Award,
   Vote,
   CheckCircle2,
@@ -376,7 +373,7 @@ function SeksiHero({ judul, warna, kandidat, aktif, mapTrend }: {
   );
 }
 
-function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; onClick: () => void }) {
+function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; onClick: (e?: React.MouseEvent) => void }) {
   const selesai = kolom.tahap === 'selesai';
   const barisRingkas = (label: 'P' | 'D', warna: 'penatua' | 'diaken', daftar: Kandidat[]) => {
     const { menang, seri } = hasilAkhir(daftar);
@@ -406,7 +403,7 @@ function KartuNav({ kolom, tengah, onClick }: { kolom: Kolom; tengah: boolean; o
       tabIndex={0}
       aria-label={`Pilih ${kolom.nama}`}
       className={`kartu-nav ${tengah ? 'tengah' : ''} ${selesai ? 'selesai' : ''}`}
-      onClick={onClick}
+      onClick={(e) => onClick(e)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -486,11 +483,25 @@ function HalamanQuickCountContent() {
     setAktif((a) => (a + arah + jumlah) % jumlah);
   }, [jumlah]);
 
-  // Navigasi manual (klik kartu/panah/titik) mengunci carousel ke pilihan itu
+  // Navigasi manual (klik panah/titik) mengunci carousel ke pilihan itu
   const pilih = useCallback((i: number) => {
     setAktif(i);
     setKunci(true);
   }, []);
+
+  // Navigasi nav-track: klik kolom baru mengunci carousel, klik lagi atau klik track melepas kunci
+  const tanganiKlikNavTrack = useCallback((i?: number) => {
+    if (i !== undefined) {
+      if (aktif === i) {
+        setKunci((k) => !k);
+      } else {
+        setAktif(i);
+        setKunci(true);
+      }
+    } else {
+      setKunci((k) => !k);
+    }
+  }, [aktif]);
 
   const geserManual = useCallback((arah: 1 | -1) => {
     geser(arah);
@@ -662,9 +673,18 @@ function HalamanQuickCountContent() {
               speed={35}
               speedOnHover={0}
               paused={kunci}
+              onClick={() => tanganiKlikNavTrack()}
             >
               {daftarTampil.map((k, i) => (
-                <KartuNav kolom={k} tengah={i === aktif} onClick={() => pilih(i)} key={k.id} />
+                <KartuNav
+                  kolom={k}
+                  tengah={i === aktif}
+                  onClick={(e) => {
+                    e?.stopPropagation();
+                    tanganiKlikNavTrack(i);
+                  }}
+                  key={k.id}
+                />
               ))}
             </InfiniteSlider>
 
@@ -683,19 +703,6 @@ function HalamanQuickCountContent() {
               ))}
               <button className="panah-dots" onClick={() => geserManual(1)} aria-label="Kolom berikutnya">
                 <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <div style={{ textAlign: 'center', marginTop: 14 }}>
-              <button
-                className={`btn-putar ${kunci ? 'terkunci' : ''}`}
-                onClick={() => setKunci((v) => !v)}
-                aria-label={kunci ? 'Lanjutkan putar otomatis' : 'Kunci di kolom ini'}
-                title={kunci
-                  ? `Terkunci di ${kolomAktif.nama}: klik untuk lanjut putar otomatis`
-                  : `Putar otomatis aktif: klik untuk mengunci di ${kolomAktif.nama}`}
-              >
-                {kunci ? <Lock size={16} /> : jeda ? <Play size={16} /> : <Pause size={16} />}
               </button>
             </div>
           </>
